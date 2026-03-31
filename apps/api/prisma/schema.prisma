@@ -14,10 +14,61 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User { 
-  id    String  @id @default(auto()) @map("_id") @db.ObjectId
-  email String  @unique
-  name  String
-  password String
-  isSeller Boolean @default(false)
-} 
+model User {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String    @unique
+  password  String
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+model Listing {
+  id        String               @id @default(auto()) @map("_id") @db.ObjectId
+  status    ListingStatus        @default(in_stock)
+  title     String                
+  size      String
+  vibe      Vibe[]
+  picture   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  status          OrderStatus    @default(pending)
+  buyerConfirmed  Boolean        @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum OrderStatus {
+  pending
+  completed
+  cancelled
+}
+
+enum ListingStatus {
+  in_stock
+  out_of_order
+}
+
+enum Vibe {
+  Fresh
+  Floral
+  Woody
+  Citrus
+  Oriental
+  Gourmand
+  Sporty
+  Sweet
+  Earthy
+  Spicy
+  Aromatic
+  Fruity
+  Green
+  Leather
+  Musk
+}

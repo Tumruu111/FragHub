@@ -19,10 +19,20 @@ model User {
   name      String
   email     String    @unique
   password  String
+  role      Roles     @default(User)   
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
+
+model Admin {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  password  String
+  role      Roles    @default(Admin)
+}
+
 model Listing {
   id        String               @id @default(auto()) @map("_id") @db.ObjectId
   status    ListingStatus        @default(in_stock)
@@ -56,19 +66,24 @@ enum ListingStatus {
 }
 
 enum Vibe {
-  Fresh
-  Floral
-  Woody
-  Citrus
-  Oriental
-  Gourmand
-  Sporty
-  Sweet
-  Earthy
-  Spicy
-  Aromatic
-  Fruity
-  Green
-  Leather
-  Musk
+  FRESH        @map("Шинэлэг")
+  FLORAL       @map("Цэцэглэг")
+  WOODY        @map("Модлог")
+  CITRUS       @map("Ситрус")
+  AMBER        @map("Амбер төрлийн үнэр")
+  GOURMAND     @map("Амттан төрлийн үнэр")
+  SPORTY       @map("Спортлог")
+  SWEET        @map("Чихэрлэг")
+  EARTHY      
+  SPICY       
+  AROMATIC     
+  FRUITY       @map("Жимслэг")
+  GREEN        @map("Ногоон")
+  LEATHER      
+  MUSK         
+}
+
+enum Roles {
+  Admin 
+  User
 }

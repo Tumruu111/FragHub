@@ -1,6 +1,6 @@
-import { prisma } from '../lib/prisma';
-import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
+import { prisma } from '../../../lib/prisma';
+import bcrypt from 'bcrypt';
 
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;

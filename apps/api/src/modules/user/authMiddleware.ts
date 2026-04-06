@@ -2,11 +2,7 @@ import type { NextFunction, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { getSecret } from '../../utils/utils';
 
-export const adminAuthMiddleware = (
-  req: any,
-  res: Response,
-  next: NextFunction
-) => {
+export const authMiddleware = (req: any, res: Response, next: NextFunction) => {
   const authorization = req.headers.authorization;
 
   const token = authorization?.split(' ')[1];
@@ -18,9 +14,9 @@ export const adminAuthMiddleware = (
   const JWT_SECRET = getSecret();
 
   try {
-    const tokenData = jwt.verify(token, JWT_SECRET) as { role: string };
+    const tokenData = jwt.verify(token, JWT_SECRET) as { id: string };
 
-    req.role = tokenData.role;
+    req.userId = tokenData.id;
   } catch (e) {
     return res.status(401).send({ message: 'Invalid token' });
   }

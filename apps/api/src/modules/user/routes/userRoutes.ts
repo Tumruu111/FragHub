@@ -1,9 +1,12 @@
 import { Router } from 'express';
-import { register, login } from '../../../controllers/userControllers';
+import { orderProduct } from '../controllers/userControllers';
+import { login, register } from '../controllers/auth';
+import { authMiddleware } from '../authMiddleware';
 
 const router = Router();
 
 router.post('/register', register);
 router.post('/login', login);
+router.post('/order', authMiddleware, orderProduct);
 
 export default router;

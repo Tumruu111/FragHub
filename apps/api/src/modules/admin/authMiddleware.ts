@@ -22,9 +22,9 @@ export const adminAuthMiddleware = (
   const JWT_SECRET = getSecret();
 
   try {
-    const tokenData = jwt.verify(token, JWT_SECRET) as { id: string };
+    const tokenData = jwt.verify(token, JWT_SECRET) as { role: string };
 
-    req.userId = tokenData.id;
+    req.user.role = tokenData.role;
   } catch (e) {
     return res.status(401).send({ message: 'Invalid token' });
   }

@@ -1,7 +1,6 @@
 export const listingTypeDefs = `
-scalar DateTime
-  type Listing {
-  id: String!
+type Listing {
+  id: ID!
   status: ListingStatus!
   title: String!
   size: String!
@@ -10,20 +9,24 @@ scalar DateTime
   price: Float!
   stock: Int!
   orders: [Order!]!
-
   createdAt: DateTime!
   updatedAt: DateTime!
 }
 
-extend type Query {
-  listings: [Listing!]!
-  listing(id: ID!): Listing
+type ListingResponse {
+  data: [Listing!]!
+  pageInfo: PageInfo
 }
 
-extend type Mutation {
-  createListing(input: CreateListingInput!): Listing!
-  updateListing(id: ID!, input: UpdateListingInput!): Listing!
-  deleteListing(id: ID!): Boolean!
+input ListingFilter {
+  name: String
+  location: String
+  category: String
+}
+
+extend type Query {
+  listings(filter: ListingFilter): ListingResponse!
+  listing(id: ID!): Listing
 }
 
 input CreateListingInput {
@@ -43,4 +46,11 @@ input UpdateListingInput {
   price: Float
   stock: Int
   status: ListingStatus
-}`;
+}
+
+extend type Mutation {
+  createListing(input: CreateListingInput!): Listing!
+  updateListing(id: ID!, input: UpdateListingInput!): Listing!
+  deleteListing(id: ID!): Boolean!
+}
+`;

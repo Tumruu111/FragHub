@@ -1,14 +1,18 @@
 export const userTypeDefs = `
-scalar DateTime
-  type User {
-  id: String!
+type User {
+  id: ID!
   name: String!
   email: String!
   role: Roles!
   orders: [Order!]!
-
   createdAt: DateTime!
   updatedAt: DateTime!
+}
+
+input CreateUserInput {
+  name: String!
+  email: String!
+  password: String!
 }
 
 extend type Query {
@@ -19,11 +23,5 @@ extend type Query {
 extend type Mutation {
   createUser(input: CreateUserInput!): User!
   deleteUser(id: ID!): Boolean!
-}
-
-input CreateUserInput {
-  name: String!
-  email: String!
-  password: String!
 }
 `;

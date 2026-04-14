@@ -3,6 +3,8 @@ type Order {
   id: ID!
   status: OrderStatus!
   total: Float!
+  userId: ID!
+  listingId: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
 }

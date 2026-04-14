@@ -1,5 +1,6 @@
 import { GraphQLError } from 'graphql';
 import { prisma } from '../../../../../lib/prisma';
+import bcrypt from 'bcrypt';
 
 interface CreateUserInput {
   name: string;
@@ -18,7 +19,14 @@ export const userMutations = {
     if (!order) throw new GraphQLError('Order not found');
     if (order.userId !== userId) throw new GraphQLError('Permission denied');
 
-    await prisma.order.delete({ where: { id: orderId } });
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: 'cancelled',
+        cancelledAt: new Date(),
+      },
+    });
+
     return true;
   },
 
@@ -34,8 +42,10 @@ export const userMutations = {
       throw new GraphQLError('Email already in use');
     }
 
+    const hashed = await bcrypt.hash(password, 10);
+
     const user = await prisma.user.create({
-      data: { name, email, password },
+      data: { name, email, password: hashed },
     });
 
     return user;
@@ -48,6 +58,8 @@ export const userMutations = {
 
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) throw new GraphQLError('User not found');
+
+    await prisma.order.deleteMany({ where: { userId: id } });
 
     await prisma.user.delete({ where: { id } });
     return true;

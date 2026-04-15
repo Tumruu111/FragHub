@@ -31,6 +31,6 @@ export const userQueries = {
       where: { userId, listingId },
     });
 
-    return !!order;
+    return order;
   },
 };

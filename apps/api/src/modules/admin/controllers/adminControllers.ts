@@ -3,7 +3,7 @@ import { prisma } from '../../../lib/prisma';
 
 export const createList = async (req: Request, res: Response) => {
   try {
-    const { title, vibe, status, size, picture } = req.body;
+    const { title, vibe, status, size, picture, price } = req.body;
 
     const list = await prisma.listing.create({
       data: {
@@ -12,6 +12,7 @@ export const createList = async (req: Request, res: Response) => {
         status,
         size,
         picture,
+        price,
       },
     });
 

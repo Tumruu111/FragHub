@@ -31,7 +31,6 @@ export const adminLogin = async (req: Request, res: Response) => {
 };
 export const adminRegister = async (req: Request, res: Response) => {
   const { email, name, password, secret } = req.body;
-  console.log('BODY RECEIVED:', req.body);
   if (secret !== process.env.ADMIN_SECRET_KEY) {
     return res.status(403).send({ message: 'Unauthorized to register admin' });
   }

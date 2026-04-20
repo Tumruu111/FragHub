@@ -1,4 +1,3 @@
-// import { prisma } from '../../../lib/prisma';
 import {
   S3Client,
   PutObjectCommand,
@@ -53,8 +52,6 @@ export class FileService {
         Key: key,
       })
     );
-
-    console.log(url);
 
     return url;
   };

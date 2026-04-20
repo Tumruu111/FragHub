@@ -1,13 +1,20 @@
-import type { NextFunction, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { getSecret } from '../../utils/utils';
+import { Role } from '../../../generated/prisma/enums';
 
-// interface AdminRequest extends Request {
-//   shopId: string;
-// }
+interface JwtPayload {
+  role: Role;
+}
+
+interface AuthRequest extends Request {
+  user?: {
+    role: Role;
+  };
+}
 
 export const adminAuthMiddleware = (
-  req: any,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -22,12 +29,18 @@ export const adminAuthMiddleware = (
   const JWT_SECRET = getSecret();
 
   try {
-    const tokenData = jwt.verify(token, JWT_SECRET) as { role: string };
+    const tokenData = jwt.verify(token, JWT_SECRET) as JwtPayload;
 
-    req.user.role = tokenData.role;
+    req.user = {
+      role: tokenData.role,
+    };
+
+    if (tokenData.role !== Role.Admin) {
+      return res.status(403).send({ message: 'Forbidden: Admins only' });
+    }
+
+    return next();
   } catch (e) {
     return res.status(401).send({ message: 'Invalid token' });
   }
-
-  return next();
 };

@@ -13,7 +13,7 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      Roles    @default(User)
+  role      Role    @default(User)
 
   orders    Order[]
 
@@ -84,7 +84,7 @@ enum Vibe {
   MUSK
 }
 
-enum Roles {
+enum Role {
   Admin
   User
 }

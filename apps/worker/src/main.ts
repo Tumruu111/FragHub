@@ -27,7 +27,32 @@ const cronWorker = new Worker(
   'cronJobQueue',
   async (job) => {
     if (job.name === 'checkOrder') {
-      fetch('http://localhost:3333/api/orders/check')
+      const query = `
+        query CheckOrder($userId: ID!, $listingId: ID!) {
+      checkOrder(userId: $userId, listingId: $listingId) {
+        id
+        status
+        total
+        userId
+        listingId
+        createdAt
+        updatedAt
+      }
+    }
+  `;
+
+      const variables = {
+        userId: 'USER_ID_HERE',
+        listingId: 'LISTING_ID_HERE',
+      };
+
+      fetch('http://localhost:3333/api/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query, variables }),
+      })
         .then((response) => response.json())
         .then((data) => {
           console.log('Cron job response:', data);
@@ -37,9 +62,7 @@ const cronWorker = new Worker(
         });
     }
   },
-  {
-    connection,
-  }
+  { connection }
 );
 
 cronWorker.on('completed', (job) => {

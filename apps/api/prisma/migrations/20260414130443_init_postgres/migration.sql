@@ -8,7 +8,7 @@ CREATE TYPE "ListingStatus" AS ENUM ('in_stock', 'out_of_order');
 CREATE TYPE "Vibe" AS ENUM ('FRESH', 'FLORAL', 'WOODY', 'CITRUS', 'AMBER', 'GOURMAND', 'SPORTY', 'SWEET', 'EARTHY', 'SPICY', 'AROMATIC', 'FRUITY', 'GREEN', 'LEATHER', 'MUSK');
 
 -- CreateEnum
-CREATE TYPE "Roles" AS ENUM ('Admin', 'User');
+CREATE TYPE "Role" AS ENUM ('Admin', 'User');
 
 -- CreateTable
 CREATE TABLE "User" (

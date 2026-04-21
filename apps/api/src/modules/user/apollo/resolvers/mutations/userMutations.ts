@@ -64,4 +64,22 @@ export const userMutations = {
     await prisma.user.delete({ where: { id } });
     return true;
   },
+  updateUser: async (
+    _root: any,
+    args: { id: string; input: Partial<CreateUserInput> }
+  ) => {
+    const { id, input } = args;
+
+    if (!id) throw new GraphQLError('Invalid user ID');
+
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) throw new GraphQLError('User not found');
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: input,
+    });
+
+    return updatedUser;
+  },
 };

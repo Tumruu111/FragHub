@@ -25,6 +25,7 @@ export const adminLogin = async (req: Request, res: Response) => {
     ) {
       return res.status(401).send({ message: 'Invalid credentials' });
     }
+    console.log('Admin authenticated successfully:', admin.email);
 
     const token = jwt.sign({ id: admin.id, role: admin.role }, JWT_SECRET, {
       expiresIn: '7d',

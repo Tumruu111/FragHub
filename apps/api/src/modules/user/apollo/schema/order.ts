@@ -2,11 +2,13 @@ export const orderTypeDefs = `#graphql
 type Order {
   id: ID!
   status: OrderStatus!
-  total: Float!
   userId: ID!
   listingId: ID!
+  buyerConfirmed: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
+  completedAt: DateTime
+  cancelledAt: DateTime
 }
 
 extend type Query {
@@ -16,6 +18,7 @@ extend type Query {
 }
 
 extend type Mutation {
-  cancelOrder(userId: ID!, orderId: ID!): Order!
+  placeOrder(listingId: ID!): Order!
+  cancelOrder(orderId: ID!): Order!
 }
 `;

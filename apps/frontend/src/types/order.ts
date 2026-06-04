@@ -1,18 +1,11 @@
 export interface Order {
-  id: number;
-  userId: number;
-  price: number;
-  status: 'Pending' | 'Completed' | 'Cancelled';
+  id: string;
+  userId: string;
+  listingId: string;
+  status: 'pending' | 'completed' | 'cancelled';
+  buyerConfirmed: boolean;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface OrderItem {
-  id: number;
-  orderId: number;
-  productId: number;
-  quantity: number;
-  price: number;
-  createdAt: string;
-  updatedAt: string;
+  completedAt: string | null;
+  cancelledAt: string | null;
 }

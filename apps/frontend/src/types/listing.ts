@@ -1,9 +1,16 @@
 export interface Listing {
-  id: number;
-  productId: number;
+  id: string;
+  title: string;
   price: number;
-  quantity: number;
-  status: 'sold_out' | 'in_stock';
+  picture: string;
+  size: string;
+  vibe: string[];
+  stock: number;
+  status: 'in_stock' | 'out_of_order';
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ListingsResponse {
+  data: Listing[];
 }

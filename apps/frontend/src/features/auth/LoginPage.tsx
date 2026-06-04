@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { api } from '../../../shared/lib/api';
-import { setToken } from '../../../shared/lib/auth';
-import { Input } from '../../../shared/components/Input';
-import { Button } from '../../../shared/components/Button';
+import { api } from '../../shared/lib/api';
+import { setToken } from '../../shared/lib/auth';
+import { Input } from '../../shared/components/Input';
+import { Button } from '../../shared/components/Button';
 
-export const AdminLoginPage = () => {
+export const LoginPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,7 +18,7 @@ export const AdminLoginPage = () => {
     try {
       const res = await api.post('/admin/login', { email, password });
       setToken(res.data.token);
-      navigate('/admin/dashboard');
+      navigate('/');
     } catch (e: any) {
       setError(e?.response?.data?.message ?? 'Login failed.');
     } finally { setLoading(false); }
@@ -32,15 +32,18 @@ export const AdminLoginPage = () => {
       <div className="relative w-full max-w-sm fade-up space-y-8">
         <div className="text-center space-y-3">
           <Link to="/" className="font-display text-3xl tracking-[0.3em]" style={{ color: 'var(--gold)' }}>FRAGHUB</Link>
-          <p className="text-xs tracking-[0.3em]" style={{ color: 'var(--text-dim)' }}>ADMIN PANEL</p>
+          <p className="text-xs tracking-[0.3em]" style={{ color: 'var(--text-dim)' }}>SIGN IN TO YOUR ACCOUNT</p>
         </div>
-        <div className="p-8 space-y-5" style={{ background: 'var(--bg-card)', border: '1px solid rgba(201,168,76,0.2)' }}>
-          <Input label="EMAIL" type="email" placeholder="admin@fraghub.com" value={email} onChange={e => setEmail(e.target.value)} />
+        <div className="p-8 space-y-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          <Input label="EMAIL" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
           <Input label="PASSWORD" type="password" placeholder="••••••••" value={password}
             onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
           {error && <p className="text-xs tracking-widest" style={{ color: '#f87171' }}>{error}</p>}
-          <Button onClick={handleLogin} loading={loading} className="w-full mt-2" size="lg">ACCESS PANEL</Button>
+          <Button onClick={handleLogin} loading={loading} className="w-full mt-2" size="lg">SIGN IN</Button>
         </div>
+        <p className="text-center text-xs tracking-widest" style={{ color: 'var(--text-dim)' }}>
+          No account?{' '}<Link to="/register" style={{ color: 'var(--gold)' }}>CREATE ONE</Link>
+        </p>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { FC, ReactNode, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingBag, User, Menu, X } from 'lucide-react';
-import { isAuthenticated, clearToken } from '../lib/auth';
+import { isAuthenticated, clearToken } from '../auth/token';
 
 interface LayoutProps { children: ReactNode; }
 

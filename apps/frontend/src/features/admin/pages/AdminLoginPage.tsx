@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { api } from '../../../shared/lib/api';
-import { setToken } from '../../../shared/lib/auth';
+import { api } from '../../../shared/api';
+import { setToken } from '../../../shared/auth';
 import { Input } from '../../../shared/components/Input';
 import { Button } from '../../../shared/components/Button';
 

@@ -1,39 +1,18 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { Role } from '../../../generated/prisma/enums';
+import { config } from '../../config';
 
-interface JwtPayload {
-  id: string;
-  role: Role;
-}
+interface JwtPayload { id: string; role: Role; }
 
-export interface AuthRequest extends Request {
-  user?: JwtPayload;
-}
+export interface AuthRequest extends Request { user?: JwtPayload; }
 
-export const adminAuthMiddleware = (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const adminAuthMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
   const token = req.headers.authorization?.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
-  const JWT_SECRET = process.env.JWT_SECRET;
-  if (!JWT_SECRET) {
-    return res.status(500).json({ message: 'Server misconfiguration' });
-  }
-
+  if (!token) return res.status(401).json({ message: 'Unauthorized' });
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
-
-    if (payload.role !== Role.Admin) {
-      return res.status(403).json({ message: 'Forbidden: Admins only' });
-    }
-
+    const payload = jwt.verify(token, config.auth.jwtSecret) as JwtPayload;
+    if (payload.role !== Role.Admin) return res.status(403).json({ message: 'Forbidden: Admins only' });
     req.user = payload;
     return next();
   } catch {

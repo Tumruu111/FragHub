@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { gql } from 'graphql-request';
-import { graphQLClient } from '../../shared/lib/graphql';
+import { graphQLClient } from '../../shared/graphql';
 import { Input } from '../../shared/components/Input';
 import { Button } from '../../shared/components/Button';
 

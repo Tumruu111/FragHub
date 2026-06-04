@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { gql } from 'graphql-request';
-import { graphQLClient } from '../../../shared/lib/graphql';
+import { graphQLClient } from '../../../shared/graphql';
 import type { Listing } from '../../../types/listing';
 
 const LISTINGS_QUERY = gql`

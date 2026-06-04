@@ -41,6 +41,9 @@
     "axios": "^1.6.0",
     "bullmq": "^5.74.1",
     "express": "^4.21.2",
-    "ioredis": "^5.10.1"
+    "ioredis": "^5.10.1",
+    "postcss": "^8.5.10",
+    "tailwind": "^4.0.0",
+    "tailwindcss": "^4.2.4"
   }
 }

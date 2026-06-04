@@ -10,7 +10,7 @@
       "path": "./apps/api"
     },
     {
-      "path": ".//apps/worker"
+      "path": "./apps/worker"
     }
   ]
 }

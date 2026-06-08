@@ -7,6 +7,7 @@ import { orderTypeDefs } from './schema/order';
 import { queries } from './resolvers/queries/listingQueries';
 import { mutations } from './resolvers/mutations/mutations';
 import type { GraphQLContext } from './context';
+import { config } from '../config';
 
 export const apolloServer = new ApolloServer<GraphQLContext>({
   typeDefs: [baseTypeDefs, enumTypeDefs, listingTypeDefs, userTypeDefs, orderTypeDefs],
@@ -14,4 +15,6 @@ export const apolloServer = new ApolloServer<GraphQLContext>({
     Query: { ...queries },
     Mutation: { ...mutations },
   },
+  // Disable introspection in production — prevents schema mapping by attackers
+  introspection: config.isDev,
 });

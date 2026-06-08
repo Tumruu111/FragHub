@@ -11,10 +11,13 @@ export const mutations = {
   createUser: async (_: any, args: { input: CreateUserInput }) => {
     const { name, email, password } = args.input;
     if (!name || !email || !password) throw new GraphQLError('All fields are required');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new GraphQLError('Invalid email address');
+    if (password.length < 8) throw new GraphQLError('Password must be at least 8 characters');
+    if (name.trim().length < 2) throw new GraphQLError('Name must be at least 2 characters');
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) throw new GraphQLError('Email already in use');
     const hashed = await bcrypt.hash(password, config.auth.bcryptRounds);
-    return prisma.user.create({ data: { name, email, password: hashed } });
+    return prisma.user.create({ data: { name: name.trim(), email, password: hashed } });
   },
 
   updateUser: async (_: any, args: { id: string; input: Partial<CreateUserInput> }, ctx: GraphQLContext) => {
@@ -42,11 +45,19 @@ export const mutations = {
     const listing = await prisma.listing.findUnique({ where: { id: args.listingId } });
     if (!listing) throw new GraphQLError('Listing not found');
     if (listing.status === 'out_of_order' || listing.stock < 1) throw new GraphQLError('This item is out of stock');
+
+    // Decrement only if stock is still > 0, preventing race-condition oversell
+    const updated = await prisma.listing.updateMany({
+      where: { id: args.listingId, stock: { gt: 0 } },
+      data: { stock: { decrement: 1 } },
+    });
+    if (updated.count === 0) throw new GraphQLError('This item is out of stock');
+
     const [order] = await prisma.$transaction([
       prisma.order.create({ data: { userId: caller.id, listingId: args.listingId } }),
       prisma.listing.update({
         where: { id: args.listingId },
-        data: { stock: { decrement: 1 }, status: listing.stock - 1 === 0 ? 'out_of_order' : 'in_stock' },
+        data: { status: listing.stock - 1 === 0 ? 'out_of_order' : 'in_stock' },
       }),
     ]);
     return order;

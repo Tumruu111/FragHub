@@ -16,7 +16,7 @@ export const LoginPage = () => {
     if (!email || !password) { setError('All fields required.'); return; }
     setError(''); setLoading(true);
     try {
-      const res = await api.post('/admin/login', { email, password });
+      const res = await api.post('/auth/login', { email, password });
       setToken(res.data.token);
       navigate('/');
     } catch (e: any) {

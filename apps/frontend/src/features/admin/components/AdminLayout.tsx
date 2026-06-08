@@ -1,7 +1,8 @@
-import type { FC } from 'react';
 import type { ReactNode } from 'react';
+import type { FC } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { clearToken } from '../../../shared/auth';
+import { api } from '../../../shared/api';
 
 const NAV = [
   { label: 'DASHBOARD', path: '/admin/dashboard' },
@@ -12,7 +13,10 @@ export const AdminLayout: FC<{ children: ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.post('/admin/logout');
+    } catch {}
     clearToken();
     navigate('/admin/login');
   };

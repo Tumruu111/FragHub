@@ -3,18 +3,13 @@ import { gql } from 'graphql-request';
 import { graphQLClient } from '../../../shared/graphql';
 import type { Order } from '../../../types/order';
 
-const MY_ORDERS_QUERY = gql`
-  query CheckOrder($userId: ID!, $listingId: ID!) {
-    checkOrder(userId: $userId, listingId: $listingId) {
-      id status listingId createdAt cancelledAt
-    }
-  }
-`;
-
 const PLACE_ORDER_MUTATION = gql`
   mutation PlaceOrder($listingId: ID!) {
     placeOrder(listingId: $listingId) {
-      id status listingId createdAt
+      id
+      status
+      listingId
+      createdAt
     }
   }
 `;
@@ -22,7 +17,9 @@ const PLACE_ORDER_MUTATION = gql`
 const CANCEL_ORDER_MUTATION = gql`
   mutation CancelOrder($orderId: ID!) {
     cancelOrder(orderId: $orderId) {
-      id status cancelledAt
+      id
+      status
+      cancelledAt
     }
   }
 `;
@@ -31,7 +28,9 @@ export const usePlaceOrder = () => {
   const qc = useQueryClient();
   return useMutation<Order, Error, string>({
     mutationFn: async (listingId: string) => {
-      const res: any = await graphQLClient.request(PLACE_ORDER_MUTATION, { listingId });
+      const res: any = await graphQLClient.request(PLACE_ORDER_MUTATION, {
+        listingId,
+      });
       return res.placeOrder;
     },
     onSuccess: () => {
@@ -45,7 +44,9 @@ export const useCancelOrder = () => {
   const qc = useQueryClient();
   return useMutation<Order, Error, string>({
     mutationFn: async (orderId: string) => {
-      const res: any = await graphQLClient.request(CANCEL_ORDER_MUTATION, { orderId });
+      const res: any = await graphQLClient.request(CANCEL_ORDER_MUTATION, {
+        orderId,
+      });
       return res.cancelOrder;
     },
     onSuccess: () => {

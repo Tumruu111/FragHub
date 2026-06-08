@@ -1,15 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { gql } from 'graphql-request';
-import { graphQLClient } from '../../shared/graphql';
+import { api } from '../../shared/api';
 import { Input } from '../../shared/components/Input';
 import { Button } from '../../shared/components/Button';
-
-const CREATE_USER = gql`
-  mutation CreateUser($input: CreateUserInput!) {
-    createUser(input: $input) { id }
-  }
-`;
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
@@ -25,10 +18,10 @@ export const RegisterPage = () => {
     if (form.password !== form.confirm) { setError('Passwords do not match.'); return; }
     setError(''); setLoading(true);
     try {
-      await graphQLClient.request(CREATE_USER, { input: { name: form.name, email: form.email, password: form.password } });
+      await api.post('/auth/register', { name: form.name, email: form.email, password: form.password });
       navigate('/login');
     } catch (e: any) {
-      setError(e?.response?.errors?.[0]?.message ?? 'Registration failed.');
+      setError(e?.response?.data?.message ?? 'Registration failed.');
     } finally { setLoading(false); }
   };
 

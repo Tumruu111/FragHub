@@ -35,6 +35,36 @@ export const queries = {
     return prisma.order.findMany({ orderBy: { createdAt: 'desc' } });
   },
 
+  adminStats: async (_: any, __: any, ctx: GraphQLContext) => {
+    requireAdmin(ctx);
+    const [listings, orders] = await Promise.all([
+      prisma.listing.findMany({ select: { status: true, stock: true, price: true } }),
+      prisma.order.findMany({
+        select: { status: true, listing: { select: { price: true } } },
+      }),
+    ]);
+
+    const inStock = listings.filter(l => l.status === 'in_stock').length;
+    const outOfStock = listings.filter(l => l.status === 'out_of_order').length;
+    const pending = orders.filter(o => o.status === 'pending').length;
+    const completed = orders.filter(o => o.status === 'completed').length;
+    const cancelled = orders.filter(o => o.status === 'cancelled').length;
+    const totalRevenue = orders
+      .filter(o => o.status === 'completed')
+      .reduce((sum, o) => sum + Number(o.listing.price), 0);
+
+    return {
+      totalListings: listings.length,
+      inStock,
+      outOfStock,
+      totalOrders: orders.length,
+      pending,
+      completed,
+      cancelled,
+      totalRevenue,
+    };
+  },
+
   order: async (_: any, args: { id: string }, ctx: GraphQLContext) => {
     const caller = requireAuth(ctx);
     if (!args.id) throw new GraphQLError('Invalid order ID');
@@ -46,9 +76,11 @@ export const queries = {
   },
 
   checkOrder: async (_: any, args: { userId: string; listingId: string }, ctx: GraphQLContext) => {
-    requireAuth(ctx);
+    const caller = requireAuth(ctx);
     const { userId, listingId } = args;
     if (!userId || !listingId) throw new GraphQLError('Invalid userId or listingId');
+    if (caller.id !== userId && caller.role !== 'Admin')
+      throw new GraphQLError('Forbidden', { extensions: { code: 'FORBIDDEN' } });
     return prisma.order.findFirst({ where: { userId, listingId } });
   },
 };

@@ -25,59 +25,49 @@ export const ProductCard: FC<ProductCardProps> = ({
   const outOfStock = status === 'out_of_order';
 
   return (
-    <div
-      className="group cursor-pointer fade-up"
-      onClick={onClick}
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-      }}
-    >
-      {/* Image */}
-      <div className="relative overflow-hidden" style={{ aspectRatio: '3/4' }}>
-        <img
-          src={picture}
-          alt={title}
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
-        {/* Gradient overlay */}
-        <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          style={{
-            background:
-              'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)',
-          }}
-        />
+    <div className="pcard" onClick={onClick}>
+      {/* Image wrapper */}
+      <div className="pcard-img-wrap">
+        <img src={picture} alt={title} className="pcard-img" />
 
+        {/* Hover overlay gradient */}
+        <div className="pcard-overlay" />
+
+        {/* Corner accents */}
+        <div className="corner-tl" />
+        <div className="corner-br" />
+
+        {/* Out of stock */}
         {outOfStock && (
-          <div
-            className="absolute inset-0 flex items-center justify-center backdrop-blur-sm"
-            style={{ background: 'rgba(0,0,0,0.6)' }}
-          >
-            <span
-              className="text-xs tracking-[0.25em]"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              SOLD OUT
-            </span>
+          <div className="pcard-oos">
+            <span className="oos-text">ÉPUISÉ</span>
           </div>
         )}
 
-        {/* Add to cart on hover */}
+        {/* Add to cart slide-up */}
         {!outOfStock && (
-          <div className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+          <div className="pcard-add-wrap">
             <button
+              className="pcard-add-btn"
               onClick={(e) => {
                 e.stopPropagation();
                 onAddToCart();
               }}
-              className="w-full py-3 text-xs tracking-[0.25em] font-medium transition-opacity"
-              style={{
-                background:
-                  'linear-gradient(135deg, #8a6f2e, #C9A84C, #E8C97A, #C9A84C)',
-                color: '#0a0a0a',
-              }}
             >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                style={{ marginRight: 6 }}
+              >
+                <path
+                  d="M6 1v10M1 6h10"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
               ADD TO CART
             </button>
           </div>
@@ -85,45 +75,23 @@ export const ProductCard: FC<ProductCardProps> = ({
       </div>
 
       {/* Info */}
-      <div className="p-4 space-y-2">
-        <h3
-          className="font-display text-base leading-tight"
-          style={{ color: 'var(--text)', fontSize: '1.05rem' }}
-        >
-          {title}
-        </h3>
-        <p
-          className="text-xs tracking-widest"
-          style={{ color: 'var(--text-dim)' }}
-        >
-          {size}
-        </p>
+      <div className="pcard-info">
+        <h3 className="pcard-title">{title}</h3>
+        <p className="pcard-size">{size}</p>
 
         {vibes?.length > 0 && (
-          <div className="flex flex-wrap gap-1 pt-1">
+          <div className="pcard-vibes">
             {vibes.slice(0, 3).map((v) => (
-              <span
-                key={v}
-                className="text-xs px-2 py-0.5"
-                style={{
-                  color: 'var(--gold)',
-                  background: 'rgba(201,168,76,0.08)',
-                  border: '1px solid rgba(201,168,76,0.15)',
-                }}
-              >
+              <span key={v} className="vibe-tag">
                 {v}
               </span>
             ))}
           </div>
         )}
 
-        <div className="pt-2">
-          <span
-            className="font-display text-lg"
-            style={{ color: 'var(--gold)' }}
-          >
-            {price.toLocaleString()}₮
-          </span>
+        <div className="pcard-price-row">
+          <span className="pcard-price">{price.toLocaleString()}₮</span>
+          {!outOfStock && <span className="pcard-avail">In stock</span>}
         </div>
       </div>
     </div>

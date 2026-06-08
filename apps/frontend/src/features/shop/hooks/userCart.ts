@@ -1,7 +1,1 @@
-export const useCart = () => {
-  return {
-    items: [],
-    addItem: () => {},
-    removeFromCart: () => {},
-  };
-};
+export { useCart } from '../context/CartContext';

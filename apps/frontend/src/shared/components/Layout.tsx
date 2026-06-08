@@ -5,6 +5,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingBag, User, Menu, X } from 'lucide-react';
 import { isAuthenticated, clearToken, getToken } from '../auth/token';
 import { api } from '../api';
+import { useCart } from '../../features/shop/context/CartContext';
+import { CartDrawer } from '../../features/shop/components/CartDrawer';
 
 interface LayoutProps {
   children: ReactNode;
@@ -15,6 +17,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const authed = isAuthenticated();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { itemCount, openCart } = useCart();
 
   const handleAuth = async () => {
     if (authed) {
@@ -33,6 +36,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      <CartDrawer />
       {/* Announcement bar */}
       <div className="announce-bar">FREE SHIPPING ON ORDERS OVER 150,000₮</div>
 
@@ -78,11 +82,23 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
               <span>{authed ? 'Logout' : 'Login'}</span>
             </button>
             <button
-              onClick={() => navigate('/cart')}
+              onClick={openCart}
               className="header-icon-btn"
               aria-label="Cart"
+              style={{ position: 'relative' }}
             >
               <ShoppingBag size={17} />
+              {itemCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: '-6px', right: '-6px',
+                  background: 'var(--gold)', color: '#0a0a0a',
+                  fontSize: '0.5rem', fontWeight: 700,
+                  width: '15px', height: '15px', borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {itemCount}
+                </span>
+              )}
             </button>
             <button
               className="mobile-menu-btn"

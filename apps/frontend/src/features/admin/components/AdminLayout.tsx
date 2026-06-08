@@ -16,7 +16,9 @@ export const AdminLayout: FC<{ children: ReactNode }> = ({ children }) => {
   const handleLogout = async () => {
     try {
       await api.post('/admin/logout');
-    } catch {}
+    } catch (_) {
+      // logout failure shouldn't block redirect
+    }
     clearToken();
     navigate('/admin/login');
   };

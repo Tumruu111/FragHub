@@ -3,9 +3,10 @@ export const baseTypeDefs = `#graphql
   type Mutation
 
   type PageInfo {
+    total: Int!
+    page: Int!
+    limit: Int!
     hasNextPage: Boolean!
     hasPreviousPage: Boolean!
-    startCursor: String
-    endCursor: String
   }
 `;

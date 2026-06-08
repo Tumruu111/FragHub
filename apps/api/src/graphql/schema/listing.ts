@@ -15,17 +15,11 @@ type Listing {
 
 type ListingResponse {
   data: [Listing!]!
-  pageInfo: PageInfo
-}
-
-input ListingFilter {
-  name: String
-  location: String
-  category: String
+  pageInfo: PageInfo!
 }
 
 extend type Query {
-  listings(filter: ListingFilter): ListingResponse!
+  listings(page: Int, limit: Int): ListingResponse!
   listing(id: ID!): Listing
 }
 

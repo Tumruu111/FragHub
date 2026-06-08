@@ -18,9 +18,26 @@ export const queries = {
     return user;
   },
 
-  listings: async () => {
-    const data = await prisma.listing.findMany({ orderBy: { createdAt: 'desc' } });
-    return { data };
+  listings: async (_: any, args: { page?: number; limit?: number }) => {
+    const page = Math.max(1, args.page ?? 1);
+    const limit = Math.min(50, Math.max(1, args.limit ?? 12));
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      prisma.listing.findMany({ orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.listing.count(),
+    ]);
+
+    return {
+      data,
+      pageInfo: {
+        total,
+        page,
+        limit,
+        hasNextPage: skip + data.length < total,
+        hasPreviousPage: page > 1,
+      },
+    };
   },
 
   listing: async (_: any, args: { id: string }) => {

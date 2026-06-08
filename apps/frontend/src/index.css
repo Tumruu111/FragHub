@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── FOCUS RESET ───────────────────────────────────────────── */
+*:focus { outline: none !important; box-shadow: none !important; }
+*:focus-visible { outline: 1px solid var(--gold) !important; outline-offset: 2px !important; }
+
+button, a, nav, header, footer, label { user-select: none; }
+
 /* ── TOKENS ────────────────────────────────────────────────── */
 @layer base {
   :root {
@@ -37,6 +43,8 @@
     font-weight: 300;
     -webkit-font-smoothing: antialiased;
     letter-spacing: 0.01em;
+    user-select: none;
+    cursor: default;
   }
 
   h1, h2, h3 { font-family: var(--font-serif); }

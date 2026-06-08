@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useListings } from '../hooks/useListings';
 import { ProductCard } from '../components/ProductCard';
 import { useCart } from '../hooks/useCart';
@@ -16,8 +17,13 @@ const BRANDS = [
   'MAISON MARGIELA',
 ];
 
+const LIMIT = 12;
+
 export default function HomePage() {
-  const { data: listings, isLoading, isError } = useListings();
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isError } = useListings(page, LIMIT);
+  const listings = data?.data;
+  const pageInfo = data?.pageInfo;
   const { addItem } = useCart();
   const navigate = useNavigate();
 
@@ -125,7 +131,7 @@ export default function HomePage() {
           </div>
           <div className="collection-header-right">
             <span className="item-count">
-              {isLoading ? '—' : `${listings?.length ?? 0}`}
+              {isLoading ? '—' : `${pageInfo?.total ?? 0}`}
               <span className="item-count-label"> PIECES</span>
             </span>
             <div className="header-divider" />
@@ -216,6 +222,70 @@ export default function HomePage() {
             >
               No fragrances yet
             </p>
+          </div>
+        )}
+
+        {/* ── PAGINATION ───────────────────────────────────────── */}
+        {pageInfo && pageInfo.total > LIMIT && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            padding: '3rem 0 1rem',
+          }}>
+            <button
+              onClick={() => { setPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              disabled={!pageInfo.hasPreviousPage}
+              style={{
+                padding: '0.5rem 1.25rem',
+                fontSize: '0.65rem',
+                letterSpacing: '0.2em',
+                border: '1px solid var(--border)',
+                background: 'transparent',
+                color: pageInfo.hasPreviousPage ? 'var(--text-muted)' : 'var(--border)',
+                cursor: pageInfo.hasPreviousPage ? 'pointer' : 'default',
+                transition: 'color 0.2s, border-color 0.2s',
+              }}
+            >
+              ← PREV
+            </button>
+
+            {Array.from({ length: Math.ceil(pageInfo.total / LIMIT) }, (_, i) => i + 1).map(p => (
+              <button
+                key={p}
+                onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                style={{
+                  width: '2rem',
+                  height: '2rem',
+                  fontSize: '0.7rem',
+                  border: p === page ? '1px solid var(--gold)' : '1px solid var(--border)',
+                  background: p === page ? 'rgba(201,168,76,0.08)' : 'transparent',
+                  color: p === page ? 'var(--gold)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {p}
+              </button>
+            ))}
+
+            <button
+              onClick={() => { setPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              disabled={!pageInfo.hasNextPage}
+              style={{
+                padding: '0.5rem 1.25rem',
+                fontSize: '0.65rem',
+                letterSpacing: '0.2em',
+                border: '1px solid var(--border)',
+                background: 'transparent',
+                color: pageInfo.hasNextPage ? 'var(--text-muted)' : 'var(--border)',
+                cursor: pageInfo.hasNextPage ? 'pointer' : 'default',
+                transition: 'color 0.2s, border-color 0.2s',
+              }}
+            >
+              NEXT →
+            </button>
           </div>
         )}
       </section>

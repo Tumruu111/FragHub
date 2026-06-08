@@ -4,10 +4,17 @@ import { graphQLClient } from '../../../shared/graphql';
 import type { Listing } from '../../../types/listing';
 
 const LISTINGS_QUERY = gql`
-  query {
-    listings {
+  query GetListings($page: Int, $limit: Int) {
+    listings(page: $page, limit: $limit) {
       data {
         id title price picture size vibe stock status
+      }
+      pageInfo {
+        total
+        page
+        limit
+        hasNextPage
+        hasPreviousPage
       }
     }
   }
@@ -21,12 +28,20 @@ const LISTING_QUERY = gql`
   }
 `;
 
-export const useListings = () => {
-  return useQuery<Listing[]>({
-    queryKey: ['listings'],
+export interface PageInfo {
+  total: number;
+  page: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export const useListings = (page = 1, limit = 12) => {
+  return useQuery<{ data: Listing[]; pageInfo: PageInfo }>({
+    queryKey: ['listings', page, limit],
     queryFn: async () => {
-      const res: any = await graphQLClient.request(LISTINGS_QUERY);
-      return res.listings.data;
+      const res: any = await graphQLClient.request(LISTINGS_QUERY, { page, limit });
+      return res.listings;
     },
   });
 };

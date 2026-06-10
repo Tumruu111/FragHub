@@ -69,9 +69,13 @@ export const userLogout = async (req: Request, res: Response) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(400).json({ message: 'No token provided' });
 
-    // Decode without verifying just to get expiry
-    const decoded = jwt.decode(token) as { exp?: number } | null;
-    const expiresAt = decoded?.exp
+    let decoded: { exp?: number };
+    try {
+      decoded = jwt.verify(token, config.auth.jwtSecret) as { exp?: number };
+    } catch {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+    const expiresAt = decoded.exp
       ? new Date(decoded.exp * 1000)
       : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 

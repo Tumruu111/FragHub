@@ -27,7 +27,7 @@ model Listing {
   status    ListingStatus  @default(in_stock)
   title     String
   size      String
-  vibe      Vibe[]
+  vibe      String[]
   picture   String
   price     Decimal        @db.Decimal(10,2)
   stock     Int            @default(1)
@@ -65,24 +65,6 @@ enum OrderStatus {
 enum ListingStatus {
   in_stock
   out_of_order
-}
-
-enum Vibe {
-  FRESH
-  FLORAL
-  WOODY
-  CITRUS
-  AMBER
-  GOURMAND
-  SPORTY
-  SWEET
-  EARTHY
-  SPICY
-  AROMATIC
-  FRUITY
-  GREEN
-  LEATHER
-  MUSK
 }
 
 enum Role {

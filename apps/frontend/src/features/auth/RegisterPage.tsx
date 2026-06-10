@@ -32,7 +32,7 @@ export const RegisterPage = () => {
       }} />
       <div className="relative w-full max-w-sm fade-up space-y-8">
         <div className="text-center space-y-3">
-          <Link to="/" className="font-display text-3xl tracking-[0.3em]" style={{ color: 'var(--gold)' }}>FRAGHUB</Link>
+          <Link to="/" className="font-display text-3xl tracking-[0.3em]" style={{ color: 'var(--gold)' }}>VERITAS PARFUMS</Link>
           <p className="text-xs tracking-[0.3em]" style={{ color: 'var(--text-dim)' }}>CREATE YOUR ACCOUNT</p>
         </div>
         <div className="p-8 space-y-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>

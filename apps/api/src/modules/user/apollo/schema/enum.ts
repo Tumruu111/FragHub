@@ -17,21 +17,4 @@ enum OrderStatus {
   cancelled
 }
 
-enum Vibe {
-  FRESH
-  FLORAL
-  WOODY
-  CITRUS
-  AMBER
-  GOURMAND
-  SPORTY
-  SWEET
-  EARTHY
-  SPICY
-  AROMATIC
-  FRUITY
-  GREEN
-  LEATHER
-  MUSK
-}
 `;

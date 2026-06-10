@@ -31,11 +31,11 @@ export const AdminLoginPage = () => {
       }} />
       <div className="relative w-full max-w-sm fade-up space-y-8">
         <div className="text-center space-y-3">
-          <Link to="/" className="font-display text-3xl tracking-[0.3em]" style={{ color: 'var(--gold)' }}>FRAGHUB</Link>
+          <Link to="/" className="font-display text-3xl tracking-[0.3em]" style={{ color: 'var(--gold)' }}>VERITAS PARFUMS</Link>
           <p className="text-xs tracking-[0.3em]" style={{ color: 'var(--text-dim)' }}>ADMIN PANEL</p>
         </div>
         <div className="p-8 space-y-5" style={{ background: 'var(--bg-card)', border: '1px solid rgba(201,168,76,0.2)' }}>
-          <Input label="EMAIL" type="email" placeholder="admin@fraghub.com" value={email} onChange={e => setEmail(e.target.value)} />
+          <Input label="EMAIL" type="email" placeholder="admin@veritasparfums.mn" value={email} onChange={e => setEmail(e.target.value)} />
           <Input label="PASSWORD" type="password" placeholder="••••••••" value={password}
             onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
           {error && <p className="text-xs tracking-widest" style={{ color: '#f87171' }}>{error}</p>}

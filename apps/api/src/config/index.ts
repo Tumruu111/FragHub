@@ -18,6 +18,15 @@ export const config = {
     origin: process.env.ALLOWED_ORIGIN || '*',
   },
 
+  email: {
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: Number(process.env.SMTP_PORT) || 465,
+    secure: process.env.SMTP_SECURE !== 'false',
+    user: process.env.SMTP_USER!,
+    pass: process.env.SMTP_PASS!,
+    from: process.env.SMTP_FROM || 'Veritas Parfums <parfumsveritas@gmail.com>',
+  },
+
   qpay: {
     username: process.env.QPAY_USERNAME!,
     password: process.env.QPAY_PASSWORD!,

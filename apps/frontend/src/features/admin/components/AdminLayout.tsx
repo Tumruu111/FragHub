@@ -35,7 +35,7 @@ export const AdminLayout: FC<{ children: ReactNode }> = ({ children }) => {
           className="font-display text-xl tracking-[0.3em] mb-8 px-2 text-left"
           style={{ color: 'var(--gold)' }}
         >
-          FRAGHUB
+          VERITAS PARFUMS
         </button>
 
         {NAV.map(({ label, path }) => (
@@ -81,7 +81,7 @@ export const AdminLayout: FC<{ children: ReactNode }> = ({ children }) => {
           className="font-display text-lg tracking-widest"
           style={{ color: 'var(--gold)' }}
         >
-          FRAGHUB
+          VERITAS PARFUMS
         </span>
         <div className="flex gap-4">
           {NAV.map(({ label, path }) => (

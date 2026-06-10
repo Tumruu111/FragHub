@@ -45,7 +45,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
         <div className="header-inner">
           {/* Logo */}
           <Link to="/" className="site-logo">
-            FRAGHUB
+            VERITAS PARFUMS
           </Link>
 
           {/* Nav */}
@@ -144,21 +144,65 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
 
       {/* Footer */}
       <footer className="site-footer">
-        <div className="footer-inner">
-          <div className="footer-logo">FRAGHUB</div>
-          <div className="footer-ornament">
-            <div className="footer-line" />
-            <svg width="10" height="10" viewBox="0 0 10 10">
-              <path
-                d="M5 0L6 4L10 5L6 6L5 10L4 6L0 5L4 4Z"
-                fill="var(--gold-dim)"
-              />
-            </svg>
-            <div className="footer-line" />
+        {/* Main footer grid */}
+        <div className="footer-grid">
+          {/* Brand column */}
+          <div className="footer-brand-col">
+            <div className="footer-logo">VERITAS PARFUMS</div>
+            <p className="footer-tagline">
+              World-class fragrance decants,<br />curated for the discerning nose.
+            </p>
+            <div className="footer-ornament">
+              <div className="footer-line" />
+              <svg width="8" height="8" viewBox="0 0 10 10">
+                <path d="M5 0L6 4L10 5L6 6L5 10L4 6L0 5L4 4Z" fill="var(--gold-dim)" />
+              </svg>
+              <div className="footer-line" />
+            </div>
           </div>
-          <p className="footer-copy">
-            © 2026 · Luxury Fragrance Decants · Ulaanbaatar
-          </p>
+
+          {/* Navigation column */}
+          <div className="footer-col">
+            <p className="footer-col-heading">EXPLORE</p>
+            <div className="footer-links">
+              <Link to="/" className="footer-link">Collection</Link>
+              <Link to="/cart" className="footer-link">My Orders</Link>
+              <Link to="/login" className="footer-link">Sign In</Link>
+              <Link to="/register" className="footer-link">Create Account</Link>
+            </div>
+          </div>
+
+          {/* Contact column */}
+          <div className="footer-col">
+            <p className="footer-col-heading">CONTACT US</p>
+            <div className="footer-links">
+              <a href="mailto:parfumsveritas@gmail.com" className="footer-link footer-contact-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="4" width="20" height="16" rx="2"/>
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                </svg>
+                parfumsveritas@gmail.com
+              </a>
+              <a href="tel:+97699028893" className="footer-link footer-contact-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.58 3.41 2 2 0 0 1 3.55 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.13 6.13l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+                9902 8893
+              </a>
+              <span className="footer-contact-item" style={{ color: 'var(--text-dim)', fontSize: '0.62rem', letterSpacing: '0.1em' }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }}>
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                Ulaanbaatar, Mongolia
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="footer-bottom">
+          <p className="footer-copy">© 2026 Veritas Parfums · Luxury Fragrance Decants</p>
         </div>
       </footer>
     </div>

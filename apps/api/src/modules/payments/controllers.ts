@@ -2,11 +2,39 @@ import type { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import { createInvoice, checkInvoicePaid, cancelInvoice } from '../../lib/qpay';
+import { sendEmail } from '../../lib/email';
 import jwt from 'jsonwebtoken';
 import { config } from '../../config';
 import { Role } from '../../../generated/prisma/enums';
 
 interface JwtPayload { id: string; role: Role; }
+
+// Send order confirmation email after payment
+const sendOrderConfirmation = async (userId: string, listingIds: string[], paymentId: string) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return;
+
+  const listings = await prisma.listing.findMany({ where: { id: { in: listingIds } } });
+  const total = listings.reduce((sum, l) => sum + Number(l.price), 0);
+
+  await sendEmail({
+    to: user.email,
+    subject: 'Your Veritas Parfums order is confirmed ✓',
+    template: 'order',
+    data: {
+      name: user.name,
+      orderId: paymentId.slice(0, 8).toUpperCase(),
+      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      total: total.toLocaleString(),
+      items: listings.map(l => ({
+        title: l.title,
+        size: l.size,
+        picture: l.picture,
+        price: Number(l.price).toLocaleString(),
+      })),
+    },
+  });
+};
 
 const getUserFromRequest = (req: Request): JwtPayload | null => {
   try {
@@ -54,7 +82,7 @@ export const createPayment = async (req: Request, res: Response) => {
     const invoice = await createInvoice({
       paymentId: payment.id,
       amount,
-      description: `FragHub — ${listings.map(l => l.title).join(', ')}`,
+      description: `Veritas Parfums — ${listings.map(l => l.title).join(', ')}`,
     });
 
     // Store QPay data on the payment record
@@ -129,6 +157,7 @@ export const checkPayment = async (req: Request, res: Response) => {
     });
 
     logger.info('Payment confirmed', { paymentId: payment.id, userId: user.id });
+    sendOrderConfirmation(payment.userId, listingIds, payment.id);
     return res.json({ status: 'paid' });
   } catch (err: any) {
     logger.error('checkPayment failed', err);
@@ -170,6 +199,7 @@ export const paymentCallback = async (req: Request, res: Response) => {
     });
 
     logger.info('Payment confirmed via callback', { paymentId });
+    sendOrderConfirmation(payment.userId, listingIds, payment.id);
     return res.json({ ok: true });
   } catch (err) {
     logger.error('paymentCallback failed', err);

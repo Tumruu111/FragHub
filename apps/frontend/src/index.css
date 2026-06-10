@@ -746,26 +746,93 @@ button, a, nav, header, footer, label { user-select: none; }
   margin-top: 6rem;
   border-top: 1px solid var(--border);
 }
-.footer-inner {
+
+.footer-grid {
   max-width: 1440px; margin: 0 auto;
   padding: 4rem 2.5rem;
-  display: flex; flex-direction: column; align-items: center; gap: 1.4rem;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 3rem;
 }
+
+.footer-brand-col {
+  display: flex; flex-direction: column; gap: 1.2rem;
+}
+
 .footer-logo {
   font-family: var(--font-serif);
-  font-size: 2rem; font-weight: 300;
+  font-size: 1.8rem; font-weight: 300;
   letter-spacing: 0.4em;
   color: var(--gold-dim);
 }
+
+.footer-tagline {
+  font-family: var(--font-sans);
+  font-size: 0.65rem; font-weight: 300;
+  letter-spacing: 0.08em; line-height: 1.8;
+  color: var(--text-dim);
+}
+
 .footer-ornament {
   display: flex; align-items: center; gap: 14px;
 }
 .footer-line {
-  height: 1px; width: 50px;
+  height: 1px; width: 40px;
   background: linear-gradient(to right, transparent, var(--border2));
 }
+
+.footer-col {
+  display: flex; flex-direction: column; gap: 1rem;
+}
+
+.footer-col-heading {
+  font-family: var(--font-sans);
+  font-size: 0.58rem; font-weight: 400;
+  letter-spacing: 0.35em;
+  color: var(--gold);
+  margin-bottom: 0.25rem;
+}
+
+.footer-links {
+  display: flex; flex-direction: column; gap: 0.75rem;
+}
+
+.footer-link {
+  font-family: var(--font-sans);
+  font-size: 0.65rem; letter-spacing: 0.1em;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-link:hover { color: var(--gold); }
+
+.footer-contact-item {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.65rem; letter-spacing: 0.08em;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-contact-item:hover { color: var(--gold); }
+
+.footer-bottom {
+  border-top: 1px solid var(--border);
+  padding: 1.25rem 2.5rem;
+  max-width: 1440px; margin: 0 auto;
+}
+
 .footer-copy {
   font-family: var(--font-sans);
-  font-size: 0.6rem; letter-spacing: 0.2em;
+  font-size: 0.58rem; letter-spacing: 0.2em;
   color: var(--text-dim);
+}
+
+@media (max-width: 768px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 3rem 1.5rem;
+  }
+  .footer-bottom { padding: 1.25rem 1.5rem; }
 }

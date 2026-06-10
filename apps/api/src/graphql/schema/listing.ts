@@ -4,7 +4,7 @@ type Listing {
   status: ListingStatus!
   title: String!
   size: String!
-  vibe: [Vibe!]!
+  vibe: [String!]!
   picture: String!
   price: Float!
   stock: Int!
@@ -26,7 +26,7 @@ extend type Query {
 input CreateListingInput {
   title: String!
   size: String!
-  vibe: [Vibe!]!
+  vibe: [String!]!
   picture: String!
   price: Float!
   stock: Int!
@@ -35,7 +35,7 @@ input CreateListingInput {
 input UpdateListingInput {
   title: String
   size: String
-  vibe: [Vibe!]
+  vibe: [String!]
   picture: String
   price: Float
   stock: Int

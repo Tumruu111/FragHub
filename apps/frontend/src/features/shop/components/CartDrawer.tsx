@@ -1,44 +1,45 @@
-import { useState } from 'react';
 import { X, ShoppingBag, Trash2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { usePlaceOrder } from '../hooks/useOrders';
+import { usePayment } from '../hooks/usePayment';
+import { PaymentModal } from './PaymentModal';
 import { useNavigate } from 'react-router-dom';
 import { isAuthenticated } from '../../../shared/auth/token';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const CartDrawer = () => {
   const { items, removeItem, clearCart, total, isOpen, closeCart, itemCount } = useCart();
-  const placeOrder = usePlaceOrder();
+  const { status, payment, error, createPayment, cancelPayment, reset } = usePayment();
   const navigate = useNavigate();
-  const [checkoutState, setCheckoutState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
+  const qc = useQueryClient();
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!isAuthenticated()) {
       closeCart();
       navigate('/login');
       return;
     }
-    setCheckoutState('loading');
-    setErrorMsg('');
-    try {
-      for (const item of items) {
-        await placeOrder.mutateAsync(item.listing.id);
-      }
+    const listingIds = items.map(i => i.listing.id);
+    createPayment(listingIds, () => {
+      // Called when payment confirmed
       clearCart();
-      setCheckoutState('done');
+      qc.invalidateQueries({ queryKey: ['listings'] });
+      qc.invalidateQueries({ queryKey: ['orders'] });
       setTimeout(() => {
-        setCheckoutState('idle');
+        reset();
         closeCart();
         navigate('/cart');
-      }, 1800);
-    } catch (e: any) {
-      setErrorMsg(e?.response?.errors?.[0]?.message ?? 'Checkout failed. Please try again.');
-      setCheckoutState('error');
-    }
+      }, 2000);
+    });
+  };
+
+  const handleCancelPayment = () => {
+    cancelPayment();
   };
 
   return (
     <>
+      <PaymentModal status={status} payment={payment} error={error} onCancel={handleCancelPayment} />
+
       {/* Backdrop */}
       {isOpen && (
         <div
@@ -157,38 +158,25 @@ export const CartDrawer = () => {
               </span>
             </div>
 
-            {checkoutState === 'error' && (
-              <p style={{ fontSize: '0.65rem', letterSpacing: '0.1em', color: '#f87171' }}>{errorMsg}</p>
-            )}
-
-            {checkoutState === 'done' ? (
-              <div style={{
-                padding: '1rem', textAlign: 'center',
-                background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)',
-                color: '#6ee7b7', fontSize: '0.65rem', letterSpacing: '0.2em',
-              }}>
-                ✓ ORDERS PLACED
-              </div>
-            ) : (
-              <button
-                onClick={handleCheckout}
-                disabled={checkoutState === 'loading'}
-                style={{
-                  width: '100%', padding: '1rem',
-                  background: checkoutState === 'loading'
-                    ? 'rgba(201,168,76,0.4)'
-                    : 'linear-gradient(135deg, #7a6128, #C9A84C 45%, #E8C97A 80%, #C9A84C)',
-                  border: 'none', cursor: checkoutState === 'loading' ? 'default' : 'pointer',
-                  color: '#0a0a0a', fontFamily: 'var(--font-sans)',
-                  fontSize: '0.65rem', fontWeight: 500, letterSpacing: '0.28em',
-                  transition: 'filter 0.2s',
-                }}
-                onMouseEnter={e => { if (checkoutState !== 'loading') (e.currentTarget as HTMLButtonElement).style.filter = 'brightness(1.1)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.filter = 'brightness(1)'; }}
-              >
-                {checkoutState === 'loading' ? 'PLACING ORDERS...' : 'CHECKOUT'}
-              </button>
-            )}
+            <button
+              onClick={handleCheckout}
+              disabled={status === 'creating' || status === 'pending'}
+              style={{
+                width: '100%', padding: '1rem',
+                background: (status === 'creating' || status === 'pending')
+                  ? 'rgba(201,168,76,0.4)'
+                  : 'linear-gradient(135deg, #7a6128, #C9A84C 45%, #E8C97A 80%, #C9A84C)',
+                border: 'none',
+                cursor: (status === 'creating' || status === 'pending') ? 'default' : 'pointer',
+                color: '#0a0a0a', fontFamily: 'var(--font-sans)',
+                fontSize: '0.65rem', fontWeight: 500, letterSpacing: '0.28em',
+                transition: 'filter 0.2s',
+              }}
+              onMouseEnter={e => { if (status === 'idle') (e.currentTarget as HTMLButtonElement).style.filter = 'brightness(1.1)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.filter = 'brightness(1)'; }}
+            >
+              CHECKOUT — PAY WITH QPAY
+            </button>
 
             <button
               onClick={() => { closeCart(); navigate('/cart'); }}

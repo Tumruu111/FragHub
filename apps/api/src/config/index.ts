@@ -18,6 +18,14 @@ export const config = {
     origin: process.env.ALLOWED_ORIGIN || '*',
   },
 
+  qpay: {
+    username: process.env.QPAY_USERNAME!,
+    password: process.env.QPAY_PASSWORD!,
+    invoiceCode: process.env.QPAY_INVOICE_CODE!,
+    callbackUrl: process.env.QPAY_CALLBACK_URL!,
+    baseUrl: 'https://merchant.qpay.mn/v2',
+  },
+
   s3: {
     region: process.env.AWS_REGION!,
     endpoint: process.env.AWS_ENDPOINT,

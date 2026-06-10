@@ -12,6 +12,7 @@ import { purgeExpiredTokens } from './lib/tokenBlacklist';
 import { logger } from './lib/logger';
 import adminRoutes from './modules/admin/routes/adminRoutes';
 import authRoutes from './modules/auth/routes';
+import paymentRoutes from './modules/payments/routes';
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use('/api/graphql', graphqlLimiter, express.json(), expressMiddleware(apollo
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Purge expired blacklisted tokens on startup
 purgeExpiredTokens().catch(console.error);

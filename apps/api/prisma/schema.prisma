@@ -16,6 +16,7 @@ model User {
   role      Role    @default(User)
 
   orders    Order[]
+  payments  Payment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -87,6 +88,31 @@ enum Vibe {
 enum Role {
   Admin
   User
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  cancelled
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  amount         Decimal       @db.Decimal(10,2)
+  status         PaymentStatus @default(pending)
+  listingIds     String[]
+  qpayInvoiceId  String?
+  qpayQrText     String?
+  qpayQrImage    String?       @db.Text
+  qpayUrls       Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }
 model TokenBlacklist {
   id        String   @id @default(uuid())

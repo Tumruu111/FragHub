@@ -12,7 +12,6 @@ const getTransporter = async (): Promise<Transporter> => {
   if (transporter) return transporter;
 
   if (config.isDev && !config.email.user) {
-    // Use Ethereal for local dev when no SMTP creds are set
     const testAccount = await nodemailer.createTestAccount();
     transporter = nodemailer.createTransport({
       host: testAccount.smtp.host,
@@ -34,8 +33,16 @@ const getTransporter = async (): Promise<Transporter> => {
   return transporter;
 };
 
-const renderTemplate = (templateName: string, data: Record<string, any>): string => {
-  const templatePath = path.join(__dirname, '..', 'assets', `${templateName}.html`);
+const renderTemplate = (
+  templateName: string,
+  data: Record<string, any>
+): string => {
+  const templatePath = path.join(
+    __dirname,
+    '..',
+    'assets',
+    `${templateName}.html`
+  );
   const source = fs.readFileSync(templatePath, 'utf8');
   return Handlebars.compile(source)(data);
 };
@@ -63,7 +70,6 @@ export const sendEmail = async (opts: {
 
     logger.info('Email sent', { to: opts.to, subject: opts.subject });
   } catch (err) {
-    // Never let email failure crash the main flow
     logger.error('Failed to send email', err);
   }
 };

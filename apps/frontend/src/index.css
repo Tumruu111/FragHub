@@ -828,6 +828,412 @@ button, a, nav, header, footer, label { user-select: none; }
   color: var(--text-dim);
 }
 
+/* ══════════════════════════════════════════════════════════
+   CART DRAWER
+══════════════════════════════════════════════════════════ */
+.drawer-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.25s ease both;
+}
+
+.cart-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 101;
+  width: 100%; max-width: 440px;
+  background: linear-gradient(180deg, var(--bg-card), var(--bg));
+  border-left: 1px solid var(--gold-border);
+  display: flex; flex-direction: column;
+  transition: transform 0.45s cubic-bezier(0.16,1,0.3,1);
+}
+.cart-drawer.open   { transform: translateX(0); }
+.cart-drawer.closed { transform: translateX(100%); }
+
+.drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.6rem 1.9rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(201,168,76,0.025);
+}
+.drawer-title-row {
+  display: flex; align-items: center; gap: 0.8rem;
+}
+.drawer-title {
+  font-family: var(--font-sans);
+  font-size: 0.65rem; font-weight: 400;
+  letter-spacing: 0.32em;
+  color: var(--text);
+}
+.drawer-count {
+  display: flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px;
+  padding: 0 4px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  color: #0a0a0a;
+  font-family: var(--font-sans);
+  font-size: 0.58rem; font-weight: 500;
+}
+.drawer-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); padding: 4px;
+  transition: color 0.3s, transform 0.3s;
+}
+.drawer-close:hover { color: var(--gold); transform: rotate(90deg); }
+
+.drawer-body {
+  flex: 1; overflow-y: auto;
+  padding: 0.5rem 1.9rem 1rem;
+}
+
+/* Empty state */
+.drawer-empty {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; height: 100%; gap: 1.2rem;
+  text-align: center;
+}
+.drawer-empty-icon { color: var(--gold-dim); opacity: 0.5; }
+.drawer-empty-text {
+  font-family: var(--font-sans);
+  font-size: 0.68rem; letter-spacing: 0.28em;
+  color: var(--text-dim);
+}
+.drawer-empty-btn {
+  margin-top: 0.4rem;
+  padding: 0.75rem 2rem;
+  border: 1px solid var(--gold-border2);
+  background: transparent;
+  color: var(--gold-light);
+  font-family: var(--font-sans);
+  font-size: 0.62rem; letter-spacing: 0.26em;
+  cursor: pointer;
+  transition: background 0.3s, border-color 0.3s;
+}
+.drawer-empty-btn:hover {
+  background: var(--gold-pale);
+  border-color: var(--gold);
+}
+
+/* Line items */
+.drawer-item {
+  display: flex; gap: 1.1rem;
+  padding: 1.2rem 0;
+  border-bottom: 1px solid var(--border);
+  animation: cardIn 0.5s cubic-bezier(0.16,1,0.3,1) both;
+}
+.drawer-item-img-wrap {
+  position: relative; flex-shrink: 0;
+  border: 1px solid var(--border);
+  transition: border-color 0.3s;
+}
+.drawer-item:hover .drawer-item-img-wrap { border-color: var(--gold-border2); }
+.drawer-item-img {
+  width: 64px; height: 82px;
+  object-fit: cover; display: block;
+  background: var(--bg-elevated);
+  filter: brightness(0.92);
+  transition: filter 0.3s;
+}
+.drawer-item:hover .drawer-item-img { filter: brightness(1); }
+
+.drawer-item-info {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.drawer-item-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem; font-weight: 400;
+  color: var(--text); line-height: 1.2;
+}
+.drawer-item-size {
+  font-family: var(--font-sans);
+  font-size: 0.6rem; letter-spacing: 0.2em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.drawer-item-price {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  color: var(--gold);
+  margin-top: auto;
+}
+.drawer-item-remove {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-dim); align-self: flex-start;
+  padding: 4px; transition: color 0.25s;
+}
+.drawer-item-remove:hover { color: #f87171; }
+
+/* Footer */
+.drawer-footer {
+  padding: 1.6rem 1.9rem 1.8rem;
+  border-top: 1px solid var(--gold-border);
+  background: rgba(201,168,76,0.02);
+  display: flex; flex-direction: column; gap: 1.1rem;
+}
+.drawer-total-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.drawer-total-label {
+  font-family: var(--font-sans);
+  font-size: 0.6rem; letter-spacing: 0.3em;
+  color: var(--text-muted);
+}
+.drawer-total-value {
+  font-family: var(--font-serif);
+  font-size: 1.8rem; font-weight: 300;
+  color: var(--gold);
+}
+
+.drawer-checkout-btn {
+  width: 100%; padding: 1.05rem;
+  background: linear-gradient(135deg, #7a6128, #C9A84C 45%, #E8C97A 80%, #C9A84C);
+  border: none; cursor: pointer;
+  color: #0a0a0a;
+  font-family: var(--font-sans);
+  font-size: 0.65rem; font-weight: 500;
+  letter-spacing: 0.3em;
+  transition: filter 0.25s;
+}
+.drawer-checkout-btn:hover:not(:disabled) { filter: brightness(1.1); }
+.drawer-checkout-btn:disabled {
+  background: rgba(201,168,76,0.35);
+  cursor: default;
+}
+
+.drawer-link-btn {
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.6rem; letter-spacing: 0.22em;
+  color: var(--text-dim);
+  text-align: center;
+  padding-bottom: 1px;
+  transition: color 0.25s;
+}
+.drawer-link-btn:hover { color: var(--gold); }
+
+
+/* ══════════════════════════════════════════════════════════
+   QPAY PAYMENT MODAL
+══════════════════════════════════════════════════════════ */
+.qpay-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(7px);
+  animation: fadeIn 0.25s ease both;
+}
+
+.qpay-wrap {
+  position: fixed; inset: 0; z-index: 201;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+
+.qpay-modal {
+  position: relative;
+  width: 100%; max-width: 430px;
+  background: linear-gradient(180deg, var(--bg-elevated), var(--bg-card));
+  border: 1px solid var(--gold-border);
+  animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* Gold corner accents (always visible, echoes product cards) */
+.qpay-corner {
+  position: absolute; width: 18px; height: 18px;
+  pointer-events: none;
+}
+.qpay-corner.tl { top: -1px; left: -1px;   border-top: 1px solid var(--gold);    border-left: 1px solid var(--gold); }
+.qpay-corner.tr { top: -1px; right: -1px;  border-top: 1px solid var(--gold);    border-right: 1px solid var(--gold); }
+.qpay-corner.bl { bottom: -1px; left: -1px;  border-bottom: 1px solid var(--gold); border-left: 1px solid var(--gold); }
+.qpay-corner.br { bottom: -1px; right: -1px; border-bottom: 1px solid var(--gold); border-right: 1px solid var(--gold); }
+
+.qpay-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.3rem 1.6rem;
+  border-bottom: 1px solid var(--border);
+}
+.qpay-header-title {
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--font-sans);
+  font-size: 0.62rem; letter-spacing: 0.32em;
+  color: var(--text);
+}
+.qpay-header-rule {
+  width: 28px; height: 1px;
+  background: linear-gradient(to right, var(--gold-dim), transparent);
+}
+.qpay-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); padding: 2px;
+  transition: color 0.3s, transform 0.3s;
+}
+.qpay-close:hover { color: var(--gold); transform: rotate(90deg); }
+
+.qpay-body {
+  padding: 1.9rem 1.6rem 1.7rem;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 1.4rem;
+}
+
+/* Status: creating */
+.qpay-creating {
+  text-align: center; padding: 2.2rem 0;
+  display: flex; flex-direction: column; align-items: center; gap: 1.1rem;
+}
+.qpay-spinner { animation: spin 1.2s linear infinite; color: var(--gold); }
+.qpay-status-text {
+  font-family: var(--font-sans);
+  font-size: 0.62rem; letter-spacing: 0.26em;
+  color: var(--text-muted);
+}
+
+/* Amount */
+.qpay-amount-block { text-align: center; }
+.qpay-amount-eyebrow {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; margin-bottom: 0.7rem;
+}
+.qpay-amount-eyebrow .eyebrow-text { font-size: 0.58rem; }
+.qpay-amount-eyebrow .eyebrow-line { width: 26px; }
+.qpay-amount {
+  font-family: var(--font-serif);
+  font-size: 2.4rem; font-weight: 300;
+  line-height: 1;
+  background: linear-gradient(160deg, #EDE9E2 30%, var(--gold-light) 70%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* QR — white tile in a gold frame */
+.qpay-qr-frame {
+  padding: 8px;
+  border: 1px solid var(--gold-border2);
+  background:
+    linear-gradient(135deg, rgba(201,168,76,0.12), transparent 40%, transparent 60%, rgba(201,168,76,0.12));
+}
+.qpay-qr-tile {
+  padding: 12px; background: #fff; display: block;
+}
+.qpay-qr-img { width: 196px; height: 196px; display: block; }
+
+/* Bank deep links */
+.qpay-banks { width: 100%; }
+.qpay-banks-label {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; margin-bottom: 0.9rem;
+}
+.qpay-banks-label span {
+  font-family: var(--font-sans);
+  font-size: 0.56rem; letter-spacing: 0.24em;
+  color: var(--text-dim); white-space: nowrap;
+}
+.qpay-banks-label::before,
+.qpay-banks-label::after {
+  content: ''; flex: 1; height: 1px; max-width: 60px;
+  background: linear-gradient(to right, transparent, var(--border2));
+}
+.qpay-banks-label::after {
+  background: linear-gradient(to left, transparent, var(--border2));
+}
+.qpay-banks-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+}
+.qpay-bank-link {
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 11px 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  text-decoration: none;
+  transition: border-color 0.25s, background 0.25s;
+}
+.qpay-bank-link:hover {
+  border-color: var(--gold-border2);
+  background: var(--gold-pale);
+}
+.qpay-bank-logo { width: 28px; height: 28px; object-fit: contain; }
+.qpay-bank-name {
+  font-family: var(--font-sans);
+  font-size: 0.53rem; letter-spacing: 0.1em;
+  color: var(--text-muted); text-align: center;
+}
+
+/* Waiting row */
+.qpay-waiting {
+  display: flex; align-items: center; gap: 9px;
+}
+.qpay-waiting .qpay-spinner { animation-duration: 2.4s; color: var(--gold-dim); }
+.qpay-waiting span {
+  font-family: var(--font-sans);
+  font-size: 0.58rem; letter-spacing: 0.18em;
+  color: var(--text-dim);
+}
+
+/* Status: paid */
+.qpay-paid {
+  text-align: center; padding: 2rem 0 1.4rem;
+  display: flex; flex-direction: column; align-items: center; gap: 1rem;
+}
+.qpay-paid-mark {
+  width: 58px; height: 58px;
+  border: 1px solid var(--gold-border2);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  color: var(--gold-light);
+  background: var(--gold-pale);
+  animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both;
+}
+.qpay-paid-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem; font-weight: 400;
+  color: var(--text);
+}
+.qpay-paid-sub {
+  font-family: var(--font-sans);
+  font-size: 0.6rem; letter-spacing: 0.22em;
+  color: var(--text-dim);
+}
+
+/* Status: error */
+.qpay-error {
+  text-align: center; padding: 1.2rem 0;
+  display: flex; flex-direction: column; align-items: center; gap: 1.2rem;
+}
+.qpay-error-text {
+  font-family: var(--font-sans);
+  font-size: 0.65rem; letter-spacing: 0.1em;
+  color: #f87171;
+}
+.qpay-error-btn {
+  padding: 0.7rem 1.8rem;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.6rem; letter-spacing: 0.24em;
+  cursor: pointer;
+  transition: border-color 0.25s, color 0.25s;
+}
+.qpay-error-btn:hover { border-color: var(--gold-border2); color: var(--gold-light); }
+
+/* Cancel link */
+.qpay-cancel-link {
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.56rem; letter-spacing: 0.18em;
+  color: var(--text-dim);
+  transition: color 0.25s;
+}
+.qpay-cancel-link:hover { color: var(--gold); }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+
 @media (max-width: 768px) {
   .footer-grid {
     grid-template-columns: 1fr;

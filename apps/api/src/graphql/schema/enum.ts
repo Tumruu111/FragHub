@@ -1,7 +1,7 @@
 export const enumTypeDefs = `
 scalar DateTime
 
-enum Roles {
+enum Role {
   Admin
   User
 }

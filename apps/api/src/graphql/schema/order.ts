@@ -4,6 +4,7 @@ type Order {
   status: OrderStatus!
   userId: ID!
   listingId: ID!
+  listing: Listing!
   buyerConfirmed: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -24,6 +25,7 @@ type AdminStats {
 
 extend type Query {
   orders: [Order!]!
+  myOrders: [Order!]!
   order(id: ID!): Order
   checkOrder(userId: ID!, listingId: ID!): Order
   adminStats: AdminStats!

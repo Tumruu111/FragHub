@@ -1,6 +1,5 @@
 import { useMyOrders } from '../hooks/useMyOrders';
 import { useCancelOrder } from '../hooks/useOrders';
-import { useListing } from '../hooks/useListings';
 import { Layout } from '../../../shared/components/Layout';
 import { Button } from '../../../shared/components/Button';
 import { Badge } from '../../../shared/components/Badge';
@@ -11,7 +10,7 @@ const statusVariant = (s: Order['status']) =>
   s === 'completed' ? 'success' : s === 'cancelled' ? 'danger' : 'warning';
 
 const OrderRow: FC<{ order: Order }> = ({ order }) => {
-  const { data: listing } = useListing(order.listingId);
+  const listing = order.listing;
   const cancel = useCancelOrder();
 
   return (

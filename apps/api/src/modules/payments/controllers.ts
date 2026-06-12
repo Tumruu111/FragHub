@@ -3,11 +3,7 @@ import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import { createInvoice, checkInvoicePaid, cancelInvoice } from '../../lib/qpay';
 import { sendEmail } from '../../lib/email';
-import jwt from 'jsonwebtoken';
-import { config } from '../../config';
-import { Role } from '../../../generated/prisma/enums';
-
-interface JwtPayload { id: string; role: Role; }
+import { getUserFromRequest } from '../../lib/auth';
 
 // Send order confirmation email after payment
 const sendOrderConfirmation = async (userId: string, listingIds: string[], paymentId: string) => {
@@ -36,21 +32,11 @@ const sendOrderConfirmation = async (userId: string, listingIds: string[], payme
   });
 };
 
-const getUserFromRequest = (req: Request): JwtPayload | null => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return null;
-    return jwt.verify(token, config.auth.jwtSecret) as JwtPayload;
-  } catch {
-    return null;
-  }
-};
-
 // POST /api/payments/create
 // Body: { listingIds: string[] }
 // Creates a QPay invoice for the entire cart and returns QR data
 export const createPayment = async (req: Request, res: Response) => {
-  const user = getUserFromRequest(req);
+  const user = await getUserFromRequest(req);
   if (!user) return res.status(401).json({ message: 'Unauthorized' });
 
   try {
@@ -112,7 +98,7 @@ export const createPayment = async (req: Request, res: Response) => {
 // GET /api/payments/:id/check
 // Frontend polls this to see if the user has paid
 export const checkPayment = async (req: Request, res: Response) => {
-  const user = getUserFromRequest(req);
+  const user = await getUserFromRequest(req);
   if (!user) return res.status(401).json({ message: 'Unauthorized' });
 
   try {
@@ -209,7 +195,7 @@ export const paymentCallback = async (req: Request, res: Response) => {
 
 // DELETE /api/payments/:id  — cancel a pending payment
 export const cancelPayment = async (req: Request, res: Response) => {
-  const user = getUserFromRequest(req);
+  const user = await getUserFromRequest(req);
   if (!user) return res.status(401).json({ message: 'Unauthorized' });
 
   try {

@@ -3,7 +3,7 @@ type User {
   id: ID!
   name: String!
   email: String!
-  role: Roles!
+  role: Role!
   orders: [Order!]!
   createdAt: DateTime!
   updatedAt: DateTime!

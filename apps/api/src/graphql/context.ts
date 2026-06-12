@@ -1,14 +1,7 @@
 import type { Request } from 'express';
-import jwt from 'jsonwebtoken';
-import { Role } from '../../generated/prisma/enums';
-import { config } from '../config';
-import { isTokenBlacklisted } from '../lib/tokenBlacklist';
+import { getBearerToken, verifyToken, type JwtPayload } from '../lib/auth';
 
-export interface JwtPayload {
-  id: string;
-  role: Role;
-  exp?: number;
-}
+export type { JwtPayload };
 
 export interface GraphQLContext {
   user: JwtPayload | null;
@@ -16,14 +9,8 @@ export interface GraphQLContext {
 }
 
 export const buildContext = async ({ req }: { req: Request }): Promise<GraphQLContext> => {
-  const token = req.headers.authorization?.split(' ')[1] ?? null;
+  const token = getBearerToken(req);
   if (!token) return { user: null, token: null };
-  try {
-    const blacklisted = await isTokenBlacklisted(token);
-    if (blacklisted) return { user: null, token: null };
-    const payload = jwt.verify(token, config.auth.jwtSecret) as JwtPayload;
-    return { user: payload, token };
-  } catch {
-    return { user: null, token: null };
-  }
+  const user = await verifyToken(token);
+  return user ? { user, token } : { user: null, token: null };
 };

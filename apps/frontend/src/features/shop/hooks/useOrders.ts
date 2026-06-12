@@ -28,7 +28,7 @@ export const usePlaceOrder = () => {
   const qc = useQueryClient();
   return useMutation<Order, Error, string>({
     mutationFn: async (listingId: string) => {
-      const res: any = await graphQLClient.request(PLACE_ORDER_MUTATION, {
+      const res = await graphQLClient.request<{ placeOrder: Order }>(PLACE_ORDER_MUTATION, {
         listingId,
       });
       return res.placeOrder;
@@ -44,7 +44,7 @@ export const useCancelOrder = () => {
   const qc = useQueryClient();
   return useMutation<Order, Error, string>({
     mutationFn: async (orderId: string) => {
-      const res: any = await graphQLClient.request(CANCEL_ORDER_MUTATION, {
+      const res = await graphQLClient.request<{ cancelOrder: Order }>(CANCEL_ORDER_MUTATION, {
         orderId,
       });
       return res.cancelOrder;

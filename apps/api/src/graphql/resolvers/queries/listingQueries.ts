@@ -52,6 +52,14 @@ export const queries = {
     return prisma.order.findMany({ orderBy: { createdAt: 'desc' } });
   },
 
+  myOrders: async (_: any, __: any, ctx: GraphQLContext) => {
+    const caller = requireAuth(ctx);
+    return prisma.order.findMany({
+      where: { userId: caller.id },
+      orderBy: { createdAt: 'desc' },
+    });
+  },
+
   adminStats: async (_: any, __: any, ctx: GraphQLContext) => {
     requireAdmin(ctx);
     const [listings, orders] = await Promise.all([

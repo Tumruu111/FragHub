@@ -123,6 +123,25 @@ button, a, nav, header, footer, label { user-select: none; }
   background: var(--bg);
 }
 
+/* Photographic backdrop — drop the artwork at public/hero-aurum.jpg */
+.hero-photo {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: url('/hero-aurum.jpg');
+  background-size: cover;
+  background-position: center 40%;
+  filter: brightness(0.8) saturate(0.95);
+  animation: fadeIn 1.4s ease both;
+}
+/* Scrim: darkens the left for the title, leaves the bottles visible on the right,
+   and fades the photo into the page bg at the bottom */
+.hero-photo::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(8,8,8,0.45) 0%, rgba(8,8,8,0.1) 35%, rgba(8,8,8,0.3) 78%, var(--bg) 100%),
+    linear-gradient(to right, rgba(8,8,8,0.88) 0%, rgba(8,8,8,0.6) 38%, rgba(8,8,8,0.18) 62%, rgba(8,8,8,0.05) 100%);
+}
+
 /* Subtle noise texture via pseudo-gradient */
 .hero-noise {
   position: absolute; inset: 0; pointer-events: none;
@@ -159,6 +178,22 @@ button, a, nav, header, footer, label { user-select: none; }
   padding: 3rem 2rem 5rem;
   max-width: 700px;
   animation-delay: 0.1s;
+}
+
+/* Desktop: pin the content to the left, clear of the bottles on the right */
+@media (min-width: 900px) {
+  .hero-section { justify-content: flex-start; }
+  .hero-content {
+    text-align: left;
+    margin-left: clamp(2.5rem, 7vw, 9rem);
+    padding-left: 0; padding-right: 0;
+    max-width: 620px;
+  }
+  .hero-content .hero-eyebrow { justify-content: flex-start; }
+  .hero-content .hero-title { align-items: flex-start; }
+  .hero-content .hero-cta-row { justify-content: flex-start; }
+  .hero-content .hero-ornament { justify-content: flex-start; }
+  .hero-content .hero-title-main { font-size: clamp(3.5rem, 8.5vw, 7.5rem); }
 }
 
 /* Eyebrow line with decorative rules */
@@ -708,6 +743,31 @@ button, a, nav, header, footer, label { user-select: none; }
 }
 .header-btn:hover { color: var(--gold); }
 @media (min-width: 768px) { .header-btn { display: flex; } }
+
+/* ── LANGUAGE SWITCHER (Google Translate) ─────────────────── */
+.lang-switcher {
+  display: flex; align-items: center; gap: 5px;
+  color: var(--text-muted); transition: color 0.3s;
+}
+.lang-switcher:hover { color: var(--gold); }
+.lang-select {
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.62rem; letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: inherit;
+  appearance: none; -webkit-appearance: none;
+  padding-right: 2px;
+}
+.lang-select option { background: var(--bg-elevated); color: var(--text); }
+
+/* Suppress Google Translate chrome: top banner, tooltips, highlight */
+.goog-te-banner-frame, .skiptranslate iframe,
+#goog-gt-tt, .goog-te-balloon-frame, .goog-tooltip,
+.goog-tooltip:hover, div#goog-gt- { display: none !important; }
+.goog-text-highlight { background: none !important; box-shadow: none !important; }
+body { top: 0 !important; }
+font[style*='vertical-align'] { vertical-align: baseline !important; }
 
 .header-icon-btn {
   background: none; border: none; cursor: pointer;

@@ -7,7 +7,6 @@ import { isAuthenticated, clearToken, getToken } from '../auth/token';
 import { api } from '../api';
 import { useCart } from '../../features/shop/context/CartContext';
 import { CartDrawer } from '../../features/shop/components/CartDrawer';
-import { GoogleTranslate } from './GoogleTranslate';
 
 interface LayoutProps {
   children: ReactNode;
@@ -37,8 +36,6 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
-      {/* Hidden mount point for the Google Translate widget */}
-      <div id="google_translate_element" style={{ display: 'none' }} />
       <CartDrawer />
       {/* Announcement bar */}
       <div className="announce-bar">FREE SHIPPING ON ORDERS OVER 150,000₮</div>
@@ -80,7 +77,6 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
 
           {/* Actions */}
           <div className="header-actions">
-            <GoogleTranslate />
             <button onClick={handleAuth} className="header-btn">
               <User size={14} />
               <span>{authed ? 'Logout' : 'Login'}</span>

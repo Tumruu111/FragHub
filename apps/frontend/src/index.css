@@ -744,31 +744,6 @@ button, a, nav, header, footer, label { user-select: none; }
 .header-btn:hover { color: var(--gold); }
 @media (min-width: 768px) { .header-btn { display: flex; } }
 
-/* ── LANGUAGE SWITCHER (Google Translate) ─────────────────── */
-.lang-switcher {
-  display: flex; align-items: center; gap: 5px;
-  color: var(--text-muted); transition: color 0.3s;
-}
-.lang-switcher:hover { color: var(--gold); }
-.lang-select {
-  background: none; border: none; cursor: pointer;
-  font-family: var(--font-sans);
-  font-size: 0.62rem; letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: inherit;
-  appearance: none; -webkit-appearance: none;
-  padding-right: 2px;
-}
-.lang-select option { background: var(--bg-elevated); color: var(--text); }
-
-/* Suppress Google Translate chrome: top banner, tooltips, highlight */
-.goog-te-banner-frame, .skiptranslate iframe,
-#goog-gt-tt, .goog-te-balloon-frame, .goog-tooltip,
-.goog-tooltip:hover, div#goog-gt- { display: none !important; }
-.goog-text-highlight { background: none !important; box-shadow: none !important; }
-body { top: 0 !important; }
-font[style*='vertical-align'] { vertical-align: baseline !important; }
-
 .header-icon-btn {
   background: none; border: none; cursor: pointer;
   color: var(--text-muted); transition: color 0.3s;

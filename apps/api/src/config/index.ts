@@ -25,6 +25,7 @@ export const config = {
     user: process.env.SMTP_USER!,
     pass: process.env.SMTP_PASS!,
     from: process.env.SMTP_FROM || 'Veritas Parfums <parfumsveritas@gmail.com>',
+    adminAlert: process.env.ADMIN_ALERT_EMAIL || process.env.SMTP_USER!,
   },
 
   qpay: {

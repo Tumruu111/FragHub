@@ -4,6 +4,7 @@ import { logger } from '../../lib/logger';
 import { createInvoice, checkInvoicePaid, cancelInvoice } from '../../lib/qpay';
 import { sendEmail } from '../../lib/email';
 import { getUserFromRequest } from '../../lib/auth';
+import { config } from '../../config';
 
 // Send order confirmation email after payment
 const sendOrderConfirmation = async (userId: string, listingIds: string[], paymentId: string) => {
@@ -29,6 +30,67 @@ const sendOrderConfirmation = async (userId: string, listingIds: string[], payme
         price: Number(l.price).toLocaleString(),
       })),
     },
+  });
+};
+
+// Payment was confirmed by QPay but fulfillment failed (stock ran out first).
+// Mark the payment failed and alert the admin — the buyer needs a manual refund.
+const handleFulfillmentFailure = async (
+  payment: { id: string; userId: string; listingIds: string[]; amount: unknown },
+  err: unknown
+) => {
+  logger.error('Paid but unfulfilled — refund needed', { paymentId: payment.id, err });
+
+  await prisma.payment
+    .update({ where: { id: payment.id }, data: { status: 'failed' } })
+    .catch(e => logger.error('Failed to mark payment failed', e));
+
+  const user = await prisma.user.findUnique({ where: { id: payment.userId } });
+  const listings = await prisma.listing.findMany({ where: { id: { in: payment.listingIds } } });
+
+  await sendEmail({
+    to: config.email.adminAlert,
+    subject: `⚠ Refund needed — paid but unfulfilled order ${payment.id.slice(0, 8).toUpperCase()}`,
+    template: 'fulfillment-alert',
+    data: {
+      paymentId: payment.id,
+      shortId: payment.id.slice(0, 8).toUpperCase(),
+      date: new Date().toLocaleString('en-US'),
+      amount: Number(payment.amount).toLocaleString(),
+      reason: err instanceof Error ? err.message : String(err),
+      buyerName: user?.name ?? 'Unknown',
+      buyerEmail: user?.email ?? payment.userId,
+      items: listings.map(l => ({ title: l.title, size: l.size })),
+    },
+  });
+};
+
+// Fulfill a confirmed payment: decrement stock and create orders atomically.
+// Throws if any listing is out of stock — the payment then stays pending
+// instead of overselling.
+const fulfillPayment = async (payment: { id: string; userId: string; listingIds: string[] }) => {
+  await prisma.$transaction(async (tx) => {
+    for (const listingId of payment.listingIds) {
+      const updated = await tx.listing.updateMany({
+        where: { id: listingId, stock: { gt: 0 } },
+        data: { stock: { decrement: 1 } },
+      });
+      if (updated.count === 0) throw new Error(`${listingId} went out of stock`);
+
+      await tx.listing.updateMany({
+        where: { id: listingId, stock: 0 },
+        data: { status: 'out_of_order' },
+      });
+
+      await tx.order.create({
+        data: { userId: payment.userId, listingId },
+      });
+    }
+
+    await tx.payment.update({
+      where: { id: payment.id },
+      data: { status: 'paid' },
+    });
   });
 };
 
@@ -110,40 +172,21 @@ export const checkPayment = async (req: Request, res: Response) => {
     // Already confirmed
     if (payment.status === 'paid') return res.json({ status: 'paid' });
     if (payment.status === 'cancelled') return res.json({ status: 'cancelled' });
+    if (payment.status === 'failed') return res.json({ status: 'failed' });
 
     // Ask QPay
     const paid = await checkInvoicePaid(payment.qpayInvoiceId!);
     if (!paid) return res.json({ status: 'pending' });
 
-    // Payment confirmed — place orders and decrement stock atomically
-    const listingIds = payment.listingIds as string[];
-
-    await prisma.$transaction(async (tx) => {
-      for (const listingId of listingIds) {
-        const updated = await tx.listing.updateMany({
-          where: { id: listingId, stock: { gt: 0 } },
-          data: { stock: { decrement: 1 } },
-        });
-        if (updated.count === 0) throw new Error(`${listingId} went out of stock`);
-
-        await tx.listing.updateMany({
-          where: { id: listingId, stock: 0 },
-          data: { status: 'out_of_order' },
-        });
-
-        await tx.order.create({
-          data: { userId: payment.userId, listingId },
-        });
-      }
-
-      await tx.payment.update({
-        where: { id: payment.id },
-        data: { status: 'paid' },
-      });
-    });
+    try {
+      await fulfillPayment(payment);
+    } catch (err) {
+      await handleFulfillmentFailure(payment, err);
+      return res.json({ status: 'failed' });
+    }
 
     logger.info('Payment confirmed', { paymentId: payment.id, userId: user.id });
-    sendOrderConfirmation(payment.userId, listingIds, payment.id);
+    sendOrderConfirmation(payment.userId, payment.listingIds, payment.id);
     return res.json({ status: 'paid' });
   } catch (err: any) {
     logger.error('checkPayment failed', err);
@@ -158,34 +201,21 @@ export const paymentCallback = async (req: Request, res: Response) => {
 
   try {
     const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
-    if (!payment || payment.status === 'paid') return res.json({ ok: true });
+    if (!payment || payment.status === 'paid' || payment.status === 'failed')
+      return res.json({ ok: true });
 
     const paid = await checkInvoicePaid(payment.qpayInvoiceId!);
     if (!paid) return res.json({ ok: false });
 
-    const listingIds = payment.listingIds as string[];
-    await prisma.$transaction(async (tx) => {
-      for (const listingId of listingIds) {
-        await tx.listing.updateMany({
-          where: { id: listingId, stock: { gt: 0 } },
-          data: { stock: { decrement: 1 } },
-        });
-        await tx.listing.updateMany({
-          where: { id: listingId, stock: 0 },
-          data: { status: 'out_of_order' },
-        });
-        await tx.order.create({
-          data: { userId: payment.userId, listingId },
-        });
-      }
-      await tx.payment.update({
-        where: { id: payment.id },
-        data: { status: 'paid' },
-      });
-    });
+    try {
+      await fulfillPayment(payment);
+    } catch (err) {
+      await handleFulfillmentFailure(payment, err);
+      return res.json({ ok: true });
+    }
 
     logger.info('Payment confirmed via callback', { paymentId });
-    sendOrderConfirmation(payment.userId, listingIds, payment.id);
+    sendOrderConfirmation(payment.userId, payment.listingIds, payment.id);
     return res.json({ ok: true });
   } catch (err) {
     logger.error('paymentCallback failed', err);

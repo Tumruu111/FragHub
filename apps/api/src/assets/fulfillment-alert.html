@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Refund Needed — VERITAS PARFUMS</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #080808; font-family: 'Helvetica Neue', Arial, sans-serif; color: #EDE9E2; }
+    .wrap { max-width: 560px; margin: 0 auto; padding: 48px 24px; }
+
+    .logo {
+      text-align: center;
+      font-size: 22px;
+      letter-spacing: 0.4em;
+      color: #C9A84C;
+      margin-bottom: 8px;
+    }
+    .alert-line {
+      width: 40px; height: 1px;
+      background: #C0504C;
+      margin: 0 auto 32px;
+    }
+
+    .heading {
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.35em;
+      color: #C0504C;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    .subheading {
+      text-align: center;
+      font-size: 26px;
+      font-weight: 300;
+      color: #EDE9E2;
+      margin-bottom: 8px;
+    }
+    .intro {
+      text-align: center;
+      font-size: 13px;
+      color: #7a7770;
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+
+    .info-box {
+      background: #0f0f0f;
+      border: 1px solid #2a1a1a;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 6px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-key { color: #7a7770; letter-spacing: 0.1em; }
+    .info-val { color: #EDE9E2; text-align: right; }
+    .info-val.amount { color: #C0504C; font-size: 16px; }
+
+    .items { background: #0f0f0f; border: 1px solid #1e1e1e; margin-bottom: 32px; }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid #1e1e1e;
+      font-size: 13px;
+    }
+    .item:last-child { border-bottom: none; }
+    .item-size {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: #444;
+      text-transform: uppercase;
+    }
+
+    .note {
+      font-size: 12px;
+      color: #7a7770;
+      text-align: center;
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: #2a2a2a;
+      padding-top: 24px;
+      border-top: 1px solid #1e1e1e;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="logo">VERITAS PARFUMS</div>
+    <div class="alert-line"></div>
+
+    <p class="heading">Action Required</p>
+    <h1 class="subheading">Paid but unfulfilled order</h1>
+    <p class="intro">
+      A customer's payment was confirmed by QPay, but the order could not be
+      fulfilled — the stock was sold before their payment cleared.<br/>
+      <strong style="color:#C0504C">This buyer needs a manual refund.</strong>
+    </p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-key">ORDER ID</span>
+        <span class="info-val">{{shortId}}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">PAYMENT ID</span>
+        <span class="info-val">{{paymentId}}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">BUYER</span>
+        <span class="info-val">{{buyerName}} · {{buyerEmail}}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">AMOUNT PAID</span>
+        <span class="info-val amount">{{amount}}₮</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">DATE</span>
+        <span class="info-val">{{date}}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">REASON</span>
+        <span class="info-val">{{reason}}</span>
+      </div>
+    </div>
+
+    <div class="items">
+      {{#each items}}
+      <div class="item">
+        <span>{{this.title}}</span>
+        <span class="item-size">{{this.size}}</span>
+      </div>
+      {{/each}}
+    </div>
+
+    <p class="note">
+      Refund the buyer via the QPay merchant dashboard, then contact them at
+      <strong style="color:#C9A84C">{{buyerEmail}}</strong> to let them know.
+    </p>
+
+    <div class="footer">
+      © 2026 VERITAS PARFUMS · Internal Alert · Ulaanbaatar
+    </div>
+
+  </div>
+</body>
+</html>

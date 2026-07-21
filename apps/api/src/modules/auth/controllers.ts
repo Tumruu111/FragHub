@@ -6,14 +6,14 @@ import { blacklistToken } from '../../lib/tokenBlacklist';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Role } from '../../../generated/prisma/enums';
+import { validateRegistration } from '../../lib/validation';
 
 // ── Register ────────────────────────────────────────────────────────────────
 export const userRegister = async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email and password are required' });
-    }
+    const validationError = validateRegistration({ name, email, password });
+    if (validationError) return res.status(400).json({ message: validationError });
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return res.status(400).json({ message: 'Email already in use' });

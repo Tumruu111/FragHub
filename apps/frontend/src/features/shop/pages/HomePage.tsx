@@ -19,39 +19,31 @@ export default function HomePage() {
 
   return (
     <Layout>
-      {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="hero-section">
-        {/* Layered atmosphere */}
         <div className="hero-photo" />
         <div className="hero-noise" />
         <div className="hero-vignette" />
 
-        {/* Fine grid lines */}
         <div className="hero-grid" />
 
-        {/* Diagonal accent bar */}
         <div className="hero-bar" />
 
         <div className="hero-content fade-up">
-          {/* Eyebrow */}
           <div className="hero-eyebrow">
             <div className="eyebrow-line" />
             <span className="eyebrow-text">LUXURY FRAGRANCE DECANTS</span>
             <div className="eyebrow-line" />
           </div>
 
-          {/* Main title */}
           <h1 className="hero-title">
             <span className="hero-title-line">The</span>
             <span className="hero-title-main">Collection</span>
           </h1>
 
-          {/* Subtitle */}
           <p className="hero-subtitle">
             World-class fragrances. Yours to discover.
           </p>
 
-          {/* CTA */}
           <div className="hero-cta-row">
             <button
               onClick={() =>
@@ -80,7 +72,6 @@ export default function HomePage() {
             </button>
           </div>
 
-          {/* Ornament */}
           <div className="hero-ornament">
             <div className="ornament-line" />
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -94,13 +85,11 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Scroll indicator */}
         <div className="scroll-indicator">
           <div className="scroll-line" />
         </div>
       </section>
 
-      {/* ── BRAND MARQUEE ────────────────────────────────────── */}
       <section className="marquee-strip">
         <div className="marquee-track">
           {[...BRANDS, ...BRANDS].map((b, i) => (
@@ -112,9 +101,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── COLLECTION ───────────────────────────────────────── */}
       <section id="collection" className="collection-section">
-        {/* Section header */}
         <div className="collection-header fade-up">
           <div className="collection-header-left">
             <span className="section-label">OUR SELECTION</span>
@@ -129,7 +116,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Grid */}
         {isLoading && (
           <div className="product-grid">
             {Array.from({ length: 10 }).map((_, i) => (
@@ -216,7 +202,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* ── PAGINATION ───────────────────────────────────────── */}
         {pageInfo && pageInfo.total > LIMIT && (
           <div
             style={{
@@ -303,7 +288,6 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* ── CRAFT STRIP ──────────────────────────────────────── */}
       <section className="craft-strip fade-up">
         {[
           {

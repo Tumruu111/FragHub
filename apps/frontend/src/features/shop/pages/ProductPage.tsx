@@ -74,7 +74,6 @@ export const ProductPage = () => {
   return (
     <Layout>
       <div className="mx-auto max-w-6xl px-6 py-16 grid gap-12 md:grid-cols-[1fr,1fr]">
-        {/* Image */}
         <div
           className="fade-up relative overflow-hidden"
           style={{
@@ -103,7 +102,6 @@ export const ProductPage = () => {
           )}
         </div>
 
-        {/* Details */}
         <div className="fade-up-delay-1 space-y-8 flex flex-col justify-center">
           <div>
             <button
@@ -134,10 +132,8 @@ export const ProductPage = () => {
             </p>
           </div>
 
-          {/* Divider */}
           <div className="h-px" style={{ background: 'var(--border)' }} />
 
-          {/* Price */}
           <div>
             <p
               className="text-xs tracking-[0.3em] mb-1"
@@ -153,7 +149,6 @@ export const ProductPage = () => {
             </p>
           </div>
 
-          {/* Notes */}
           {listing.vibe?.length > 0 && (
             <div>
               <p
@@ -180,7 +175,6 @@ export const ProductPage = () => {
             </div>
           )}
 
-          {/* Stock */}
           <div>
             <span
               className="text-xs tracking-widest"
@@ -190,7 +184,6 @@ export const ProductPage = () => {
             </span>
           </div>
 
-          {/* CTA */}
           {ordered ? (
             <div
               className="px-5 py-4 text-sm tracking-widest"

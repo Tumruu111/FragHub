@@ -16,16 +16,13 @@ export const AdminLayout: FC<{ children: ReactNode }> = ({ children }) => {
   const handleLogout = async () => {
     try {
       await api.post('/admin/logout');
-    } catch (_) {
-      // logout failure shouldn't block redirect
-    }
+    } catch (_) {}
     clearToken();
     navigate('/admin/login');
   };
 
   return (
     <div className="min-h-screen flex" style={{ background: 'var(--bg)' }}>
-      {/* Sidebar */}
       <aside
         className="hidden md:flex w-52 flex-col shrink-0 border-r py-6 px-4 gap-1"
         style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
@@ -72,7 +69,6 @@ export const AdminLayout: FC<{ children: ReactNode }> = ({ children }) => {
         </button>
       </aside>
 
-      {/* Mobile top bar */}
       <div
         className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 border-b"
         style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}

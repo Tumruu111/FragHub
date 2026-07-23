@@ -37,13 +37,13 @@ const renderTemplate = (
   templateName: string,
   data: Record<string, any>
 ): string => {
-  // Bundled build: dist/main.js next to dist/assets. Source layout: src/lib next to src/assets.
   const candidates = [
     path.join(__dirname, 'assets', `${templateName}.html`),
     path.join(__dirname, '..', 'assets', `${templateName}.html`),
   ];
   const templatePath = candidates.find(fs.existsSync);
-  if (!templatePath) throw new Error(`Email template not found: ${templateName}`);
+  if (!templatePath)
+    throw new Error(`Email template not found: ${templateName}`);
   const source = fs.readFileSync(templatePath, 'utf8');
   return Handlebars.compile(source)(data);
 };

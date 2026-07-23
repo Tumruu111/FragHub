@@ -22,7 +22,6 @@ export const isTokenBlacklisted = async (token: string): Promise<boolean> => {
   }
 };
 
-// Cleanup expired tokens — call this on a schedule or at startup
 export const purgeExpiredTokens = async () => {
   try {
     const { count } = await prisma.tokenBlacklist.deleteMany({

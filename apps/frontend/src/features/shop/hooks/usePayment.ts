@@ -6,7 +6,7 @@ export type PaymentStatus = 'idle' | 'creating' | 'pending' | 'paid' | 'error';
 export interface PaymentData {
   paymentId: string;
   amount: number;
-  qrImage: string;   // base64 PNG from QPay
+  qrImage: string;
   qrText: string;
   urls: { name: string; description: string; logo: string; link: string }[];
 }
@@ -40,10 +40,8 @@ export const usePayment = () => {
           setStatus('error');
           setError('Payment was cancelled.');
         }
-      } catch {
-        // silently retry
-      }
-    }, 3000); // poll every 3 seconds
+      } catch {}
+    }, 3000);
   };
 
   const createPayment = async (listingIds: string[], onPaid: () => void) => {
@@ -63,7 +61,9 @@ export const usePayment = () => {
   const cancelPayment = async () => {
     stopPolling();
     if (payment?.paymentId) {
-      await api.delete(`/payments/${payment.paymentId}`).catch(() => {/* best-effort */});
+      await api.delete(`/payments/${payment.paymentId}`).catch(() => {
+        /* best-effort */
+      });
     }
     setStatus('idle');
     setPayment(null);

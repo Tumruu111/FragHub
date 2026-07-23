@@ -26,25 +26,20 @@ export const ProductCard: FC<ProductCardProps> = ({
 
   return (
     <div className="pcard" onClick={onClick}>
-      {/* Image wrapper */}
       <div className="pcard-img-wrap">
         <img src={picture} alt={title} className="pcard-img" />
 
-        {/* Hover overlay gradient */}
         <div className="pcard-overlay" />
 
-        {/* Corner accents */}
         <div className="corner-tl" />
         <div className="corner-br" />
 
-        {/* Out of stock */}
         {outOfStock && (
           <div className="pcard-oos">
             <span className="oos-text">ÉPUISÉ</span>
           </div>
         )}
 
-        {/* Add to cart slide-up */}
         {!outOfStock && (
           <div className="pcard-add-wrap">
             <button
@@ -74,7 +69,6 @@ export const ProductCard: FC<ProductCardProps> = ({
         )}
       </div>
 
-      {/* Info */}
       <div className="pcard-info">
         <h3 className="pcard-title">{title}</h3>
         <p className="pcard-size">{size}</p>

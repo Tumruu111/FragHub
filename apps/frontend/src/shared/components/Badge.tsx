@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import type { FC } from 'react';
 
 type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'gold';
 
@@ -10,9 +10,11 @@ const variants: Record<BadgeVariant, React.CSSProperties> = {
   gold: { background: 'rgba(201,168,76,0.12)', color: 'var(--gold)' },
 };
 
-export const Badge: FC<{ label: string; variant?: BadgeVariant; className?: string }> = ({
-  label, variant = 'default', className = ''
-}) => (
+export const Badge: FC<{
+  label: string;
+  variant?: BadgeVariant;
+  className?: string;
+}> = ({ label, variant = 'default', className = '' }) => (
   <span
     className={`inline-flex items-center px-2.5 py-0.5 text-xs tracking-widest ${className}`}
     style={variants[variant]}

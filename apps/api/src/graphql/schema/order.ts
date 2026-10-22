@@ -12,6 +12,11 @@ type Order {
   cancelledAt: DateTime
 }
 
+type DayCount {
+  day: String!
+  count: Int!
+}
+
 type AdminStats {
   totalListings: Int!
   inStock: Int!
@@ -21,6 +26,7 @@ type AdminStats {
   completed: Int!
   cancelled: Int!
   totalRevenue: Float!
+  ordersByDay: [DayCount!]!
 }
 
 extend type Query {
@@ -32,7 +38,6 @@ extend type Query {
 }
 
 extend type Mutation {
-  placeOrder(listingId: ID!): Order!
   cancelOrder(orderId: ID!): Order!
 }
 `;

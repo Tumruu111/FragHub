@@ -13,6 +13,10 @@ const STATS_QUERY = gql`
       completed
       cancelled
       totalRevenue
+      ordersByDay {
+        day
+        count
+      }
     }
   }
 `;
@@ -26,6 +30,7 @@ export interface AdminStats {
   completed: number;
   cancelled: number;
   totalRevenue: number;
+  ordersByDay: { day: string; count: number }[];
 }
 
 export const useAdminStats = () => {

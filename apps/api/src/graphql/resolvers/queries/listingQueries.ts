@@ -65,7 +65,11 @@ export const queries = {
     const [listings, orders] = await Promise.all([
       prisma.listing.findMany({ select: { status: true, stock: true, price: true } }),
       prisma.order.findMany({
-        select: { status: true, listing: { select: { price: true } } },
+        select: {
+          status: true,
+          createdAt: true,
+          listing: { select: { price: true } },
+        },
       }),
     ]);
 
@@ -78,6 +82,19 @@ export const queries = {
       .filter(o => o.status === 'completed')
       .reduce((sum, o) => sum + Number(o.listing.price), 0);
 
+    // Order counts for the last 7 days, oldest first, keyed by YYYY-MM-DD
+    const ordersByDay = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      const key = d.toISOString().slice(0, 10);
+      return {
+        day: d.toLocaleDateString('en-US', { weekday: 'short' }),
+        count: orders.filter(
+          (o) => o.createdAt.toISOString().slice(0, 10) === key
+        ).length,
+      };
+    });
+
     return {
       totalListings: listings.length,
       inStock,
@@ -87,6 +104,7 @@ export const queries = {
       completed,
       cancelled,
       totalRevenue,
+      ordersByDay,
     };
   },
 

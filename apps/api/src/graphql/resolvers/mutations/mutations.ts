@@ -58,37 +58,8 @@ export const mutations = {
     return true;
   },
 
-  placeOrder: async (
-    _: any,
-    args: { listingId: string },
-    ctx: GraphQLContext
-  ) => {
-    const caller = requireAuth(ctx);
-    const listing = await prisma.listing.findUnique({
-      where: { id: args.listingId },
-    });
-    if (!listing) throw new GraphQLError('Listing not found');
-    if (listing.status === 'out_of_order' || listing.stock < 1)
-      throw new GraphQLError('This item is out of stock');
-
-    const updated = await prisma.listing.updateMany({
-      where: { id: args.listingId, stock: { gt: 0 } },
-      data: { stock: { decrement: 1 } },
-    });
-    if (updated.count === 0)
-      throw new GraphQLError('This item is out of stock');
-
-    const [order] = await prisma.$transaction([
-      prisma.order.create({
-        data: { userId: caller.id, listingId: args.listingId },
-      }),
-      prisma.listing.update({
-        where: { id: args.listingId },
-        data: { status: listing.stock - 1 === 0 ? 'out_of_order' : 'in_stock' },
-      }),
-    ]);
-    return order;
-  },
+  // Orders are only created by the QPay flow (modules/payments), after the
+  // payment is confirmed. There is intentionally no mutation to place one.
 
   cancelOrder: async (
     _: any,

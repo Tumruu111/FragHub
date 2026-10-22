@@ -1,30 +1,15 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useListing } from '../hooks/useListings';
-import { usePlaceOrder } from '../hooks/useOrders';
+import { useCart } from '../hooks/useCart';
 import { Layout } from '../../../shared/components/Layout';
 import { Button } from '../../../shared/components/Button';
-import { useState } from 'react';
 
 export const ProductPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: listing, isLoading, isError } = useListing(id!);
-  const placeOrder = usePlaceOrder();
-  const [ordered, setOrdered] = useState(false);
-  const [err, setErr] = useState('');
-
-  const handleOrder = async () => {
-    if (!listing) return;
-    setErr('');
-    try {
-      await placeOrder.mutateAsync(listing.id);
-      setOrdered(true);
-    } catch (e: any) {
-      setErr(
-        e?.response?.errors?.[0]?.message ?? 'Order failed. Please try again.'
-      );
-    }
-  };
+  const { data: listing, isLoading, isError } = useListing(id);
+  const { items, addItem, openCart } = useCart();
+  const inCart = items.some((i) => i.listing.id === id);
 
   if (isLoading) {
     return (
@@ -184,41 +169,15 @@ export const ProductPage = () => {
             </span>
           </div>
 
-          {ordered ? (
-            <div
-              className="px-5 py-4 text-sm tracking-widest"
-              style={{
-                background: 'rgba(16,185,129,0.08)',
-                border: '1px solid rgba(16,185,129,0.2)',
-                color: '#6ee7b7',
-              }}
-            >
-              ✓ ORDER PLACED —{' '}
-              <button onClick={() => navigate('/cart')} className="underline">
-                view in orders
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {err && (
-                <p
-                  className="text-xs tracking-widest"
-                  style={{ color: '#f87171' }}
-                >
-                  {err}
-                </p>
-              )}
-              <Button
-                onClick={handleOrder}
-                loading={placeOrder.isPending}
-                disabled={outOfStock}
-                className="w-full"
-                size="lg"
-              >
-                {outOfStock ? 'UNAVAILABLE' : 'PLACE ORDER'}
-              </Button>
-            </div>
-          )}
+          {/* Buying goes through the cart → QPay checkout, never directly. */}
+          <Button
+            onClick={() => (inCart ? openCart() : addItem(listing))}
+            disabled={outOfStock}
+            className="w-full"
+            size="lg"
+          >
+            {outOfStock ? 'UNAVAILABLE' : inCart ? 'VIEW CART' : 'ADD TO CART'}
+          </Button>
         </div>
       </div>
     </Layout>

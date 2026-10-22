@@ -5,6 +5,14 @@ import { createInvoice, checkInvoicePaid, cancelInvoice } from '../../lib/qpay';
 import { sendEmail } from '../../lib/email';
 import { getUserFromRequest } from '../../lib/auth';
 import { config } from '../../config';
+import { PaymentStatus } from '../../../generated/prisma/enums';
+
+// A payment QPay may still report as paid. 'cancelled' is included because the
+// buyer can finish paying in their bank app after closing our QR modal.
+const UNSETTLED: PaymentStatus[] = [
+  PaymentStatus.pending,
+  PaymentStatus.cancelled,
+];
 
 // Send order confirmation email after payment
 const sendOrderConfirmation = async (
@@ -54,14 +62,18 @@ const handleFulfillmentFailure = async (
   },
   err: unknown
 ) => {
+  // Only the request that actually records the failure sends the alert, so a
+  // racing poll + callback can't email the admin twice.
+  const marked = await prisma.payment.updateMany({
+    where: { id: payment.id, status: { in: UNSETTLED } },
+    data: { status: PaymentStatus.failed },
+  });
+  if (marked.count === 0) return;
+
   logger.error('Paid but unfulfilled — refund needed', {
     paymentId: payment.id,
     err,
   });
-
-  await prisma.payment
-    .update({ where: { id: payment.id }, data: { status: 'failed' } })
-    .catch((e) => logger.error('Failed to mark payment failed', e));
 
   const user = await prisma.user.findUnique({ where: { id: payment.userId } });
   const listings = await prisma.listing.findMany({
@@ -87,15 +99,24 @@ const handleFulfillmentFailure = async (
   });
 };
 
-// Fulfill a confirmed payment: decrement stock and create orders atomically.
-// Throws if any listing is out of stock — the payment then stays pending
-// instead of overselling.
+// Fulfill a confirmed payment: claim it, decrement stock and create orders
+// atomically. Returns false if another request already settled this payment —
+// the frontend poll and the QPay callback can arrive at the same time.
+// Throws if any listing is out of stock; the whole transaction rolls back.
 const fulfillPayment = async (payment: {
   id: string;
   userId: string;
   listingIds: string[];
-}) => {
-  await prisma.$transaction(async (tx) => {
+}): Promise<boolean> =>
+  prisma.$transaction(async (tx) => {
+    // Claiming locks the payment row. A concurrent request blocks here until
+    // this transaction ends, then finds the payment settled and claims nothing.
+    const claimed = await tx.payment.updateMany({
+      where: { id: payment.id, status: { in: UNSETTLED } },
+      data: { status: PaymentStatus.paid },
+    });
+    if (claimed.count === 0) return false;
+
     for (const listingId of payment.listingIds) {
       const updated = await tx.listing.updateMany({
         where: { id: listingId, stock: { gt: 0 } },
@@ -114,12 +135,8 @@ const fulfillPayment = async (payment: {
       });
     }
 
-    await tx.payment.update({
-      where: { id: payment.id },
-      data: { status: 'paid' },
-    });
+    return true;
   });
-};
 
 // POST /api/payments/create
 // Body: { listingIds: string[] }
@@ -218,11 +235,21 @@ export const checkPayment = async (req: Request, res: Response) => {
     const paid = await checkInvoicePaid(payment.qpayInvoiceId!);
     if (!paid) return res.json({ status: 'pending' });
 
+    let fulfilled: boolean;
     try {
-      await fulfillPayment(payment);
+      fulfilled = await fulfillPayment(payment);
     } catch (err) {
       await handleFulfillmentFailure(payment, err);
       return res.json({ status: 'failed' });
+    }
+
+    if (!fulfilled) {
+      // The QPay callback settled it first; report what it decided.
+      const current = await prisma.payment.findUnique({
+        where: { id: payment.id },
+        select: { status: true },
+      });
+      return res.json({ status: current?.status ?? 'pending' });
     }
 
     logger.info('Payment confirmed', {
@@ -253,12 +280,16 @@ export const paymentCallback = async (req: Request, res: Response) => {
     const paid = await checkInvoicePaid(payment.qpayInvoiceId!);
     if (!paid) return res.json({ ok: false });
 
+    let fulfilled: boolean;
     try {
-      await fulfillPayment(payment);
+      fulfilled = await fulfillPayment(payment);
     } catch (err) {
       await handleFulfillmentFailure(payment, err);
       return res.json({ ok: true });
     }
+
+    // The frontend poll settled it first; nothing left to do.
+    if (!fulfilled) return res.json({ ok: true });
 
     logger.info('Payment confirmed via callback', { paymentId });
     sendOrderConfirmation(payment.userId, payment.listingIds, payment.id);

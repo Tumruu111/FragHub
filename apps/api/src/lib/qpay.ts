@@ -4,7 +4,7 @@ import { config } from '../config';
 const BASE = config.qpay.baseUrl;
 
 let cachedToken: string | null = null;
-let tokenExpiresAt: number = 0;
+let tokenExpiresAt = 0;
 
 const getAccessToken = async (): Promise<string> => {
   if (cachedToken && Date.now() < tokenExpiresAt) return cachedToken;

@@ -4,6 +4,7 @@
     "outDir": "dist",
     "types": ["node"],
     "rootDir": "src",
+    "declaration": true,
     "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],

@@ -40,7 +40,9 @@ export const usePayment = () => {
           setStatus('error');
           setError('Payment was cancelled.');
         }
-      } catch {}
+      } catch {
+        // Transient network error; try again on the next tick.
+      }
     }, 3000);
   };
 

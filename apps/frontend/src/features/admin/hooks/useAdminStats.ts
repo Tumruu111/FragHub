@@ -13,6 +13,10 @@ const STATS_QUERY = gql`
       completed
       cancelled
       totalRevenue
+      ordersByDay {
+        day
+        count
+      }
     }
   }
 `;
@@ -26,13 +30,16 @@ export interface AdminStats {
   completed: number;
   cancelled: number;
   totalRevenue: number;
+  ordersByDay: { day: string; count: number }[];
 }
 
 export const useAdminStats = () => {
   return useQuery<AdminStats>({
     queryKey: ['admin', 'stats'],
     queryFn: async () => {
-      const res = await graphQLClient.request<{ adminStats: AdminStats }>(STATS_QUERY);
+      const res = await graphQLClient.request<{ adminStats: AdminStats }>(
+        STATS_QUERY
+      );
       return res.adminStats;
     },
   });

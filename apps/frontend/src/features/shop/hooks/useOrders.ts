@@ -17,9 +17,12 @@ export const useCancelOrder = () => {
   const qc = useQueryClient();
   return useMutation<Order, Error, string>({
     mutationFn: async (orderId: string) => {
-      const res = await graphQLClient.request<{ cancelOrder: Order }>(CANCEL_ORDER_MUTATION, {
-        orderId,
-      });
+      const res = await graphQLClient.request<{ cancelOrder: Order }>(
+        CANCEL_ORDER_MUTATION,
+        {
+          orderId,
+        }
+      );
       return res.cancelOrder;
     },
     onSuccess: () => {

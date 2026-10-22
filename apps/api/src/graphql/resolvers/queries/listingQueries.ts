@@ -12,7 +12,9 @@ export const queries = {
   user: async (_: any, args: { id: string }, ctx: GraphQLContext) => {
     const caller = requireAuth(ctx);
     if (caller.id !== args.id && caller.role !== 'Admin')
-      throw new GraphQLError('Forbidden', { extensions: { code: 'FORBIDDEN' } });
+      throw new GraphQLError('Forbidden', {
+        extensions: { code: 'FORBIDDEN' },
+      });
     const user = await prisma.user.findUnique({ where: { id: args.id } });
     if (!user) throw new GraphQLError('User not found');
     return user;
@@ -24,7 +26,11 @@ export const queries = {
     const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      prisma.listing.findMany({ orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.listing.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
       prisma.listing.count(),
     ]);
 
@@ -63,7 +69,9 @@ export const queries = {
   adminStats: async (_: any, __: any, ctx: GraphQLContext) => {
     requireAdmin(ctx);
     const [listings, orders] = await Promise.all([
-      prisma.listing.findMany({ select: { status: true, stock: true, price: true } }),
+      prisma.listing.findMany({
+        select: { status: true, stock: true, price: true },
+      }),
       prisma.order.findMany({
         select: {
           status: true,
@@ -73,13 +81,15 @@ export const queries = {
       }),
     ]);
 
-    const inStock = listings.filter(l => l.status === 'in_stock').length;
-    const outOfStock = listings.filter(l => l.status === 'out_of_order').length;
-    const pending = orders.filter(o => o.status === 'pending').length;
-    const completed = orders.filter(o => o.status === 'completed').length;
-    const cancelled = orders.filter(o => o.status === 'cancelled').length;
+    const inStock = listings.filter((l) => l.status === 'in_stock').length;
+    const outOfStock = listings.filter(
+      (l) => l.status === 'out_of_order'
+    ).length;
+    const pending = orders.filter((o) => o.status === 'pending').length;
+    const completed = orders.filter((o) => o.status === 'completed').length;
+    const cancelled = orders.filter((o) => o.status === 'cancelled').length;
     const totalRevenue = orders
-      .filter(o => o.status === 'completed')
+      .filter((o) => o.status === 'completed')
       .reduce((sum, o) => sum + Number(o.listing.price), 0);
 
     // Order counts for the last 7 days, oldest first, keyed by YYYY-MM-DD
@@ -114,16 +124,25 @@ export const queries = {
     const order = await prisma.order.findUnique({ where: { id: args.id } });
     if (!order) throw new GraphQLError('Order not found');
     if (caller.id !== order.userId && caller.role !== 'Admin')
-      throw new GraphQLError('Forbidden', { extensions: { code: 'FORBIDDEN' } });
+      throw new GraphQLError('Forbidden', {
+        extensions: { code: 'FORBIDDEN' },
+      });
     return order;
   },
 
-  checkOrder: async (_: any, args: { userId: string; listingId: string }, ctx: GraphQLContext) => {
+  checkOrder: async (
+    _: any,
+    args: { userId: string; listingId: string },
+    ctx: GraphQLContext
+  ) => {
     const caller = requireAuth(ctx);
     const { userId, listingId } = args;
-    if (!userId || !listingId) throw new GraphQLError('Invalid userId or listingId');
+    if (!userId || !listingId)
+      throw new GraphQLError('Invalid userId or listingId');
     if (caller.id !== userId && caller.role !== 'Admin')
-      throw new GraphQLError('Forbidden', { extensions: { code: 'FORBIDDEN' } });
+      throw new GraphQLError('Forbidden', {
+        extensions: { code: 'FORBIDDEN' },
+      });
     return prisma.order.findFirst({ where: { userId, listingId } });
   },
 };

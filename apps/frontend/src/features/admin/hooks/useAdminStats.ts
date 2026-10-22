@@ -37,7 +37,9 @@ export const useAdminStats = () => {
   return useQuery<AdminStats>({
     queryKey: ['admin', 'stats'],
     queryFn: async () => {
-      const res = await graphQLClient.request<{ adminStats: AdminStats }>(STATS_QUERY);
+      const res = await graphQLClient.request<{ adminStats: AdminStats }>(
+        STATS_QUERY
+      );
       return res.adminStats;
     },
   });

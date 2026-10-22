@@ -4,7 +4,10 @@ import bcrypt from 'bcrypt';
 import { requireAdmin, requireAuth } from '../../guards';
 import type { GraphQLContext } from '../../context';
 import { config } from '../../../config';
-import { validateRegistration, validateUserUpdate } from '../../../lib/validation';
+import {
+  validateRegistration,
+  validateUserUpdate,
+} from '../../../lib/validation';
 
 interface CreateUserInput {
   name: string;

@@ -32,6 +32,13 @@ jobs:
 
       - run: npm ci
 
+      # The Prisma client is gitignored, so generate it before typecheck/build.
+      # generate never connects to the DB; the URL only has to be present.
+      - run: npx prisma generate
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+
       # Prepend any command with "nx record --" to record its logs to Nx Cloud
       - run: npx nx record -- npx nx format:check  --base="remotes/origin/main"
       - run: npx nx run-many -t lint test build typecheck e2e-ci

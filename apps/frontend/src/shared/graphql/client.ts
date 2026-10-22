@@ -3,7 +3,7 @@ import { getToken } from '../auth/token';
 import { config } from '../../config';
 
 export const graphQLClient = new GraphQLClient(config.graphqlUrl, {
-  headers: () => {
+  headers: (): Record<string, string> => {
     const token = getToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
   },

@@ -16,7 +16,9 @@ export const AdminLayout: FC<{ children: ReactNode }> = ({ children }) => {
   const handleLogout = async () => {
     try {
       await api.post('/admin/logout');
-    } catch (_) {}
+    } catch {
+      // Logout is best-effort; clear the local session either way.
+    }
     clearToken();
     navigate('/admin/login');
   };

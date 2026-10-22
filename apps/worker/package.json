@@ -12,15 +12,15 @@
         "defaultConfiguration": "production",
         "options": {
           "platform": "node",
-          "outputPath": "/apps/worker/dist",
+          "outputPath": "apps/worker/dist",
           "format": [
             "cjs"
           ],
           "bundle": false,
-          "main": "/apps/worker/src/main.ts",
-          "tsConfig": "/apps/worker/tsconfig.app.json",
+          "main": "apps/worker/src/main.ts",
+          "tsConfig": "apps/worker/tsconfig.app.json",
           "assets": [
-            "/apps/worker/src/assets"
+            "apps/worker/src/assets"
           ],
           "esbuildOptions": {
             "sourcemap": true,
@@ -48,8 +48,8 @@
         "cache": true,
         "executor": "@nx/js:prune-lockfile",
         "outputs": [
-          "{workspaceRoot}//apps/worker/dist/package.json",
-          "{workspaceRoot}//apps/worker/dist/package-lock.json"
+          "{workspaceRoot}/apps/worker/dist/package.json",
+          "{workspaceRoot}/apps/worker/dist/package-lock.json"
         ],
         "options": {
           "buildTarget": "build"
@@ -61,7 +61,7 @@
         ],
         "cache": true,
         "outputs": [
-          "{workspaceRoot}//apps/worker/dist/workspace_modules"
+          "{workspaceRoot}/apps/worker/dist/workspace_modules"
         ],
         "executor": "@nx/js:copy-workspace-modules",
         "options": {

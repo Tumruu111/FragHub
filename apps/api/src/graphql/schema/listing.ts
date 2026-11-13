@@ -1,13 +1,22 @@
 export const listingTypeDefs = `
+type ListingSize {
+  sizeMl: Int!
+  price: Float!
+  "How many of this size the ml left in the bottle can fill"
+  available: Int!
+}
+
 type Listing {
   id: ID!
   status: ListingStatus!
   title: String!
-  size: String!
   vibe: [String!]!
   picture: String!
-  price: Float!
-  stock: Int!
+  "Full bottle size in ml"
+  bottleMl: Int!
+  "Ml left in the bottle, shared by every size"
+  volumeMl: Int!
+  sizes: [ListingSize!]!
   orders: [Order!]!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -21,25 +30,34 @@ type ListingResponse {
 extend type Query {
   listings(page: Int, limit: Int): ListingResponse!
   listing(id: ID!): Listing
+  adminListings: [Listing!]!
+  "The fixed decant sizes every listing is priced in"
+  decantSizes: [Int!]!
+}
+
+input SizePriceInput {
+  sizeMl: Int!
+  price: Float!
 }
 
 input CreateListingInput {
   title: String!
-  size: String!
   vibe: [String!]!
   picture: String!
-  price: Float!
-  stock: Int!
+  bottleMl: Int!
+  "Defaults to the full bottle"
+  volumeMl: Int
+  sizes: [SizePriceInput!]!
 }
 
 input UpdateListingInput {
   title: String
-  size: String
   vibe: [String!]
   picture: String
-  price: Float
-  stock: Int
+  bottleMl: Int
+  volumeMl: Int
   status: ListingStatus
+  sizes: [SizePriceInput!]
 }
 
 extend type Mutation {

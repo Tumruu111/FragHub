@@ -5,6 +5,7 @@ import { createInvoice, checkInvoicePaid, cancelInvoice } from '../../lib/qpay';
 import { sendEmail } from '../../lib/email';
 import { getUserFromRequest } from '../../lib/auth';
 import { config } from '../../config';
+import { parseUnit, SMALLEST_SIZE_ML } from '../../lib/decants';
 import { PaymentStatus } from '../../../generated/prisma/enums';
 
 // A payment QPay may still report as paid. 'cancelled' is included because the
@@ -16,42 +17,47 @@ const UNSETTLED: PaymentStatus[] = [
 
 const MAX_UNITS_PER_ORDER = 50;
 
-// A payment stores one listing id per unit bought, so ['a', 'a', 'b'] is
-// 2 × a and 1 × b. Each unit becomes its own order on fulfilment.
-const countUnits = (listingIds: string[]) => {
+// A payment stores one unit per decant bought, as "listingId:sizeMl" (see
+// lib/decants), in its listingIds column. This groups them into lines of
+// listing × size × quantity with each size's current price. `missing` is true
+// when a unit's listing or size no longer exists.
+const loadCartLines = async (units: string[]) => {
   const counts = new Map<string, number>();
-  for (const id of listingIds) counts.set(id, (counts.get(id) ?? 0) + 1);
-  return counts;
-};
+  for (const unit of units) counts.set(unit, (counts.get(unit) ?? 0) + 1);
 
-const loadCartLines = async (listingIds: string[]) => {
-  const counts = countUnits(listingIds);
-  const listings = await prisma.listing.findMany({
-    where: { id: { in: [...counts.keys()] } },
+  const wanted = [...counts].flatMap(([unit, quantity]) => {
+    const parsed = parseUnit(unit);
+    return parsed ? [{ ...parsed, quantity }] : [];
   });
-  return listings.map((listing) => ({
-    listing,
-    quantity: counts.get(listing.id) ?? 0,
-  }));
+  const listings = await prisma.listing.findMany({
+    where: { id: { in: wanted.map((w) => w.listingId) } },
+    include: { sizes: true },
+  });
+
+  const lines = wanted.flatMap(({ listingId, sizeMl, quantity }) => {
+    const listing = listings.find((l) => l.id === listingId);
+    const size = listing?.sizes.find((s) => s.sizeMl === sizeMl);
+    return listing && size
+      ? [{ listing, sizeMl, price: Number(size.price), quantity }]
+      : [];
+  });
+  return { lines, missing: lines.length !== counts.size };
 };
 
-const quantityLabel = (quantity: number) =>
-  quantity > 1 ? ` · × ${quantity}` : '';
+const lineSize = (sizeMl: number, quantity: number) =>
+  `${sizeMl}ml${quantity > 1 ? ` · × ${quantity}` : ''}`;
 
 // Send order confirmation email after payment
 const sendOrderConfirmation = async (
   userId: string,
-  listingIds: string[],
+  units: string[],
   paymentId: string
 ) => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return;
 
-  const lines = await loadCartLines(listingIds);
-  const total = lines.reduce(
-    (sum, { listing, quantity }) => sum + Number(listing.price) * quantity,
-    0
-  );
+  const { lines } = await loadCartLines(units);
+  const total = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
 
   await sendEmail({
     to: user.email,
@@ -66,11 +72,11 @@ const sendOrderConfirmation = async (
         day: 'numeric',
       }),
       total: total.toLocaleString(),
-      items: lines.map(({ listing, quantity }) => ({
+      items: lines.map(({ listing, sizeMl, price, quantity }) => ({
         title: listing.title,
-        size: listing.size + quantityLabel(quantity),
+        size: lineSize(sizeMl, quantity),
         picture: listing.picture,
-        price: (Number(listing.price) * quantity).toLocaleString(),
+        price: (price * quantity).toLocaleString(),
       })),
     },
   });
@@ -101,7 +107,7 @@ const handleFulfillmentFailure = async (
   });
 
   const user = await prisma.user.findUnique({ where: { id: payment.userId } });
-  const lines = await loadCartLines(payment.listingIds);
+  const { lines } = await loadCartLines(payment.listingIds);
 
   await sendEmail({
     to: config.email.adminAlert,
@@ -117,18 +123,19 @@ const handleFulfillmentFailure = async (
       reason: err instanceof Error ? err.message : String(err),
       buyerName: user?.name ?? 'Unknown',
       buyerEmail: user?.email ?? payment.userId,
-      items: lines.map(({ listing, quantity }) => ({
+      items: lines.map(({ listing, sizeMl, quantity }) => ({
         title: listing.title,
-        size: listing.size + quantityLabel(quantity),
+        size: lineSize(sizeMl, quantity),
       })),
     },
   });
 };
 
-// Fulfill a confirmed payment: claim it, decrement stock and create orders
-// atomically. Returns false if another request already settled this payment —
-// the frontend poll and the QPay callback can arrive at the same time.
-// Throws if any listing is out of stock; the whole transaction rolls back.
+// Fulfill a confirmed payment: claim it, take each decant's ml out of its
+// bottle and create orders atomically. Returns false if another request
+// already settled this payment — the frontend poll and the QPay callback can
+// arrive at the same time. Throws if a bottle doesn't have enough ml left; the
+// whole transaction rolls back.
 const fulfillPayment = async (payment: {
   id: string;
   userId: string;
@@ -143,21 +150,30 @@ const fulfillPayment = async (payment: {
     });
     if (claimed.count === 0) return false;
 
-    for (const listingId of payment.listingIds) {
+    for (const unit of payment.listingIds) {
+      const parsed = parseUnit(unit);
+      if (!parsed) throw new Error(`Unrecognised item "${unit}"`);
+      const { listingId, sizeMl } = parsed;
+
+      const size = await tx.listingSize.findUnique({
+        where: { listingId_sizeMl: { listingId, sizeMl } },
+      });
+      if (!size) throw new Error(`${sizeMl}ml of ${listingId} is not sold`);
+
       const updated = await tx.listing.updateMany({
-        where: { id: listingId, stock: { gt: 0 } },
-        data: { stock: { decrement: 1 } },
+        where: { id: listingId, status: 'in_stock', volumeMl: { gte: sizeMl } },
+        data: { volumeMl: { decrement: sizeMl } },
       });
       if (updated.count === 0)
-        throw new Error(`${listingId} went out of stock`);
+        throw new Error(`${listingId} has less than ${sizeMl}ml left`);
 
       await tx.listing.updateMany({
-        where: { id: listingId, stock: 0 },
+        where: { id: listingId, volumeMl: { lt: SMALLEST_SIZE_ML } },
         data: { status: 'out_of_order' },
       });
 
       await tx.order.create({
-        data: { userId: payment.userId, listingId },
+        data: { userId: payment.userId, listingId, sizeMl, price: size.price },
       });
     }
 
@@ -165,57 +181,61 @@ const fulfillPayment = async (payment: {
   });
 
 // POST /api/payments/create
-// Body: { listingIds: string[] } — one id per unit, repeated for quantity
-// Creates a QPay invoice for the entire cart and returns QR data
+// Body: { units: string[] } — one "listingId:sizeMl" per decant, repeated for
+// quantity. Creates a QPay invoice for the entire cart and returns QR data.
 export const createPayment = async (req: Request, res: Response) => {
   const user = await getUserFromRequest(req);
   if (!user) return res.status(401).json({ message: 'Unauthorized' });
 
   try {
-    const { listingIds } = req.body as { listingIds: unknown };
+    const { units } = req.body as { units: unknown };
     if (
-      !Array.isArray(listingIds) ||
-      !listingIds.length ||
-      !listingIds.every((id) => typeof id === 'string')
+      !Array.isArray(units) ||
+      !units.length ||
+      !units.every((u) => typeof u === 'string' && parseUnit(u))
     )
       return res.status(400).json({ message: 'No items provided' });
-    if (listingIds.length > MAX_UNITS_PER_ORDER)
+    if (units.length > MAX_UNITS_PER_ORDER)
       return res.status(400).json({
         message: `You can order at most ${MAX_UNITS_PER_ORDER} items at once`,
       });
 
-    // Fetch listings and validate stock for the full quantity of each
-    const lines = await loadCartLines(listingIds);
-    if (lines.length !== countUnits(listingIds).size)
+    const { lines, missing } = await loadCartLines(units);
+    if (missing)
       return res
         .status(400)
-        .json({ message: 'One or more listings not found' });
+        .json({ message: 'One or more items are no longer available' });
 
+    // Every size draws from the same bottle, so check the total ml per listing
+    const mlWanted = new Map<string, number>();
+    for (const { listing, sizeMl, quantity } of lines)
+      mlWanted.set(
+        listing.id,
+        (mlWanted.get(listing.id) ?? 0) + sizeMl * quantity
+      );
     const short = lines.find(
-      ({ listing, quantity }) =>
-        listing.status === 'out_of_order' || listing.stock < quantity
+      ({ listing }) =>
+        listing.status === 'out_of_order' ||
+        listing.volumeMl < (mlWanted.get(listing.id) ?? 0)
     );
     if (short) {
-      const { title, stock, status } = short.listing;
+      const { title, volumeMl, status } = short.listing;
       return res.status(400).json({
         message:
-          status === 'out_of_order' || stock < 1
+          status === 'out_of_order' || volumeMl < SMALLEST_SIZE_ML
             ? `"${title}" is out of stock`
-            : `Only ${stock} of "${title}" left`,
+            : `Only ${volumeMl}ml of "${title}" left`,
       });
     }
 
-    const amount = lines.reduce(
-      (sum, { listing, quantity }) => sum + Number(listing.price) * quantity,
-      0
-    );
+    const amount = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
 
     // Create payment record first so we have an ID for the callback
     const payment = await prisma.payment.create({
       data: {
         userId: user.id,
         amount,
-        listingIds,
+        listingIds: units,
         status: 'pending',
       },
     });
@@ -225,8 +245,9 @@ export const createPayment = async (req: Request, res: Response) => {
       paymentId: payment.id,
       amount,
       description: `Veritas Parfums — ${lines
-        .map(({ listing, quantity }) =>
-          quantity > 1 ? `${listing.title} × ${quantity}` : listing.title
+        .map(
+          ({ listing, sizeMl, quantity }) =>
+            `${listing.title} ${sizeMl}ml${quantity > 1 ? ` × ${quantity}` : ''}`
         )
         .join(', ')}`,
     });

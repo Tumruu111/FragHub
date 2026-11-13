@@ -1,4 +1,5 @@
 import { prisma } from '../../../lib/prisma';
+import { DECANT_SIZES_ML } from '../../../lib/decants';
 import { GraphQLError } from 'graphql';
 import { requireAdmin, requireAuth } from '../../guards';
 import type { GraphQLContext } from '../../context';
@@ -53,6 +54,13 @@ export const queries = {
     return listing;
   },
 
+  adminListings: async (_: any, __: any, ctx: GraphQLContext) => {
+    requireAdmin(ctx);
+    return prisma.listing.findMany({ orderBy: { createdAt: 'desc' } });
+  },
+
+  decantSizes: () => DECANT_SIZES_ML,
+
   orders: async (_: any, __: any, ctx: GraphQLContext) => {
     requireAdmin(ctx);
     return prisma.order.findMany({ orderBy: { createdAt: 'desc' } });
@@ -69,15 +77,9 @@ export const queries = {
   adminStats: async (_: any, __: any, ctx: GraphQLContext) => {
     requireAdmin(ctx);
     const [listings, orders] = await Promise.all([
-      prisma.listing.findMany({
-        select: { status: true, stock: true, price: true },
-      }),
+      prisma.listing.findMany({ select: { status: true } }),
       prisma.order.findMany({
-        select: {
-          status: true,
-          createdAt: true,
-          listing: { select: { price: true } },
-        },
+        select: { status: true, createdAt: true, price: true },
       }),
     ]);
 
@@ -90,7 +92,7 @@ export const queries = {
     const cancelled = orders.filter((o) => o.status === 'cancelled').length;
     const totalRevenue = orders
       .filter((o) => o.status === 'completed')
-      .reduce((sum, o) => sum + Number(o.listing.price), 0);
+      .reduce((sum, o) => sum + Number(o.price), 0);
 
     // Order counts for the last 7 days, oldest first, keyed by YYYY-MM-DD
     const ordersByDay = Array.from({ length: 7 }, (_, i) => {

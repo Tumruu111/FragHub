@@ -14,6 +14,30 @@ const UNSETTLED: PaymentStatus[] = [
   PaymentStatus.cancelled,
 ];
 
+const MAX_UNITS_PER_ORDER = 50;
+
+// A payment stores one listing id per unit bought, so ['a', 'a', 'b'] is
+// 2 × a and 1 × b. Each unit becomes its own order on fulfilment.
+const countUnits = (listingIds: string[]) => {
+  const counts = new Map<string, number>();
+  for (const id of listingIds) counts.set(id, (counts.get(id) ?? 0) + 1);
+  return counts;
+};
+
+const loadCartLines = async (listingIds: string[]) => {
+  const counts = countUnits(listingIds);
+  const listings = await prisma.listing.findMany({
+    where: { id: { in: [...counts.keys()] } },
+  });
+  return listings.map((listing) => ({
+    listing,
+    quantity: counts.get(listing.id) ?? 0,
+  }));
+};
+
+const quantityLabel = (quantity: number) =>
+  quantity > 1 ? ` · × ${quantity}` : '';
+
 // Send order confirmation email after payment
 const sendOrderConfirmation = async (
   userId: string,
@@ -23,10 +47,11 @@ const sendOrderConfirmation = async (
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return;
 
-  const listings = await prisma.listing.findMany({
-    where: { id: { in: listingIds } },
-  });
-  const total = listings.reduce((sum, l) => sum + Number(l.price), 0);
+  const lines = await loadCartLines(listingIds);
+  const total = lines.reduce(
+    (sum, { listing, quantity }) => sum + Number(listing.price) * quantity,
+    0
+  );
 
   await sendEmail({
     to: user.email,
@@ -41,11 +66,11 @@ const sendOrderConfirmation = async (
         day: 'numeric',
       }),
       total: total.toLocaleString(),
-      items: listings.map((l) => ({
-        title: l.title,
-        size: l.size,
-        picture: l.picture,
-        price: Number(l.price).toLocaleString(),
+      items: lines.map(({ listing, quantity }) => ({
+        title: listing.title,
+        size: listing.size + quantityLabel(quantity),
+        picture: listing.picture,
+        price: (Number(listing.price) * quantity).toLocaleString(),
       })),
     },
   });
@@ -76,9 +101,7 @@ const handleFulfillmentFailure = async (
   });
 
   const user = await prisma.user.findUnique({ where: { id: payment.userId } });
-  const listings = await prisma.listing.findMany({
-    where: { id: { in: payment.listingIds } },
-  });
+  const lines = await loadCartLines(payment.listingIds);
 
   await sendEmail({
     to: config.email.adminAlert,
@@ -94,7 +117,10 @@ const handleFulfillmentFailure = async (
       reason: err instanceof Error ? err.message : String(err),
       buyerName: user?.name ?? 'Unknown',
       buyerEmail: user?.email ?? payment.userId,
-      items: listings.map((l) => ({ title: l.title, size: l.size })),
+      items: lines.map(({ listing, quantity }) => ({
+        title: listing.title,
+        size: listing.size + quantityLabel(quantity),
+      })),
     },
   });
 };
@@ -139,35 +165,50 @@ const fulfillPayment = async (payment: {
   });
 
 // POST /api/payments/create
-// Body: { listingIds: string[] }
+// Body: { listingIds: string[] } — one id per unit, repeated for quantity
 // Creates a QPay invoice for the entire cart and returns QR data
 export const createPayment = async (req: Request, res: Response) => {
   const user = await getUserFromRequest(req);
   if (!user) return res.status(401).json({ message: 'Unauthorized' });
 
   try {
-    const { listingIds } = req.body as { listingIds: string[] };
-    if (!listingIds?.length)
+    const { listingIds } = req.body as { listingIds: unknown };
+    if (
+      !Array.isArray(listingIds) ||
+      !listingIds.length ||
+      !listingIds.every((id) => typeof id === 'string')
+    )
       return res.status(400).json({ message: 'No items provided' });
+    if (listingIds.length > MAX_UNITS_PER_ORDER)
+      return res.status(400).json({
+        message: `You can order at most ${MAX_UNITS_PER_ORDER} items at once`,
+      });
 
-    // Fetch listings and validate stock
-    const listings = await prisma.listing.findMany({
-      where: { id: { in: listingIds } },
-    });
-    if (listings.length !== listingIds.length)
+    // Fetch listings and validate stock for the full quantity of each
+    const lines = await loadCartLines(listingIds);
+    if (lines.length !== countUnits(listingIds).size)
       return res
         .status(400)
         .json({ message: 'One or more listings not found' });
 
-    const outOfStock = listings.find(
-      (l) => l.status === 'out_of_order' || l.stock < 1
+    const short = lines.find(
+      ({ listing, quantity }) =>
+        listing.status === 'out_of_order' || listing.stock < quantity
     );
-    if (outOfStock)
-      return res
-        .status(400)
-        .json({ message: `"${outOfStock.title}" is out of stock` });
+    if (short) {
+      const { title, stock, status } = short.listing;
+      return res.status(400).json({
+        message:
+          status === 'out_of_order' || stock < 1
+            ? `"${title}" is out of stock`
+            : `Only ${stock} of "${title}" left`,
+      });
+    }
 
-    const amount = listings.reduce((sum, l) => sum + Number(l.price), 0);
+    const amount = lines.reduce(
+      (sum, { listing, quantity }) => sum + Number(listing.price) * quantity,
+      0
+    );
 
     // Create payment record first so we have an ID for the callback
     const payment = await prisma.payment.create({
@@ -183,8 +224,10 @@ export const createPayment = async (req: Request, res: Response) => {
     const invoice = await createInvoice({
       paymentId: payment.id,
       amount,
-      description: `Veritas Parfums — ${listings
-        .map((l) => l.title)
+      description: `Veritas Parfums — ${lines
+        .map(({ listing, quantity }) =>
+          quantity > 1 ? `${listing.title} × ${quantity}` : listing.title
+        )
         .join(', ')}`,
     });
 

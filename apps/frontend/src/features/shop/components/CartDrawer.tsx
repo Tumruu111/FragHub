@@ -5,10 +5,19 @@ import { PaymentModal } from './PaymentModal';
 import { useNavigate } from 'react-router-dom';
 import { isAuthenticated } from '../../../shared/auth/token';
 import { useQueryClient } from '@tanstack/react-query';
+import { QuantityStepper } from '../../../shared/components/QuantityStepper';
 
 export const CartDrawer = () => {
-  const { items, removeItem, clearCart, total, isOpen, closeCart, itemCount } =
-    useCart();
+  const {
+    items,
+    setQuantity,
+    removeItem,
+    clearCart,
+    total,
+    isOpen,
+    closeCart,
+    itemCount,
+  } = useCart();
   const { status, payment, error, createPayment, cancelPayment, reset } =
     usePayment();
   const navigate = useNavigate();
@@ -20,7 +29,10 @@ export const CartDrawer = () => {
       navigate('/login');
       return;
     }
-    const listingIds = items.map((i) => i.listing.id);
+    // The API takes one id per unit: 2 × a is ['a', 'a'].
+    const listingIds = items.flatMap(({ listing, quantity }) =>
+      Array.from({ length: quantity }, () => listing.id)
+    );
     createPayment(listingIds, () => {
       clearCart();
       qc.invalidateQueries({ queryKey: ['listings'] });
@@ -80,7 +92,7 @@ export const CartDrawer = () => {
               </button>
             </div>
           ) : (
-            items.map(({ listing }, i) => (
+            items.map(({ listing, quantity }, i) => (
               <div
                 key={listing.id}
                 className="drawer-item"
@@ -96,8 +108,14 @@ export const CartDrawer = () => {
                 <div className="drawer-item-info">
                   <p className="drawer-item-title">{listing.title}</p>
                   <p className="drawer-item-size">{listing.size}</p>
+                  <QuantityStepper
+                    size="sm"
+                    value={quantity}
+                    max={listing.stock}
+                    onChange={(q) => setQuantity(listing.id, q)}
+                  />
                   <p className="drawer-item-price">
-                    {Number(listing.price).toLocaleString()}₮
+                    {(Number(listing.price) * quantity).toLocaleString()}₮
                   </p>
                 </div>
                 <button

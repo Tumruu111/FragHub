@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
 import type { ReactNode } from 'react';
 import type { Listing } from '../../../types/listing';
 
@@ -9,7 +15,8 @@ export interface CartItem {
 
 interface CartContextValue {
   items: CartItem[];
-  addItem: (listing: Listing) => void;
+  addItem: (listing: Listing, quantity?: number) => void;
+  setQuantity: (listingId: string, quantity: number) => void;
   removeItem: (listingId: string) => void;
   clearCart: () => void;
   itemCount: number;
@@ -38,30 +45,66 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
-  const addItem = useCallback((listing: Listing) => {
-    setItems(prev => {
-      const existing = prev.find(i => i.listing.id === listing.id);
-      if (existing) return prev;
-      return [...prev, { listing, quantity: 1 }];
+  // Quantities are capped at the stock we last saw; the server re-checks
+  // stock at checkout.
+  const addItem = useCallback((listing: Listing, quantity = 1) => {
+    setItems((prev) => {
+      const existing = prev.find((i) => i.listing.id === listing.id);
+      if (existing)
+        return prev.map((i) =>
+          i.listing.id === listing.id
+            ? {
+                listing,
+                quantity: Math.min(i.quantity + quantity, listing.stock),
+              }
+            : i
+        );
+      if (listing.stock < 1) return prev;
+      return [
+        ...prev,
+        { listing, quantity: Math.min(quantity, listing.stock) },
+      ];
     });
     setIsOpen(true);
   }, []);
 
+  const setQuantity = useCallback((listingId: string, quantity: number) => {
+    setItems((prev) =>
+      prev.flatMap((i) => {
+        if (i.listing.id !== listingId) return [i];
+        if (quantity < 1) return [];
+        return [{ ...i, quantity: Math.min(quantity, i.listing.stock) }];
+      })
+    );
+  }, []);
+
   const removeItem = useCallback((listingId: string) => {
-    setItems(prev => prev.filter(i => i.listing.id !== listingId));
+    setItems((prev) => prev.filter((i) => i.listing.id !== listingId));
   }, []);
 
   const clearCart = useCallback(() => setItems([]), []);
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
-  const total = items.reduce((sum, i) => sum + Number(i.listing.price) * i.quantity, 0);
+  const total = items.reduce(
+    (sum, i) => sum + Number(i.listing.price) * i.quantity,
+    0
+  );
 
   return (
-    <CartContext.Provider value={{
-      items, addItem, removeItem, clearCart,
-      itemCount, total,
-      isOpen, openCart: () => setIsOpen(true), closeCart: () => setIsOpen(false),
-    }}>
+    <CartContext.Provider
+      value={{
+        items,
+        addItem,
+        setQuantity,
+        removeItem,
+        clearCart,
+        itemCount,
+        total,
+        isOpen,
+        openCart: () => setIsOpen(true),
+        closeCart: () => setIsOpen(false),
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

@@ -39,6 +39,13 @@ export const usePayment = () => {
           stopPolling();
           setStatus('error');
           setError('Payment was cancelled.');
+        } else if (res.data.status === 'failed') {
+          // Paid, but an item sold out before we could fulfil it.
+          stopPolling();
+          setStatus('error');
+          setError(
+            'Payment received, but an item sold out first. We will refund you.'
+          );
         }
       } catch {
         // Transient network error; try again on the next tick.

@@ -247,7 +247,9 @@ export const createPayment = async (req: Request, res: Response) => {
       description: `Veritas Parfums — ${lines
         .map(
           ({ listing, sizeMl, quantity }) =>
-            `${listing.title} ${sizeMl}ml${quantity > 1 ? ` × ${quantity}` : ''}`
+            `${listing.title} ${sizeMl}ml${
+              quantity > 1 ? ` × ${quantity}` : ''
+            }`
         )
         .join(', ')}`,
     });

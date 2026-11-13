@@ -54,7 +54,8 @@ const loadCart = (): CartItem[] => {
     // Drop lines saved before decant sizes existed
     return Array.isArray(stored)
       ? stored.filter(
-          (i) => typeof i?.sizeMl === 'number' && Array.isArray(i.listing?.sizes)
+          (i) =>
+            typeof i?.sizeMl === 'number' && Array.isArray(i.listing?.sizes)
         )
       : [];
   } catch {

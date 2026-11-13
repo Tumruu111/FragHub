@@ -16,7 +16,10 @@ const OrderRow: FC<{ order: Order }> = ({ order }) => {
   return (
     <div
       className="flex items-center gap-5 p-5 transition-colors"
-      style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}
+      style={{
+        border: '1px solid var(--border)',
+        background: 'var(--bg-card)',
+      }}
       onMouseEnter={(e) =>
         (e.currentTarget.style.borderColor = 'var(--border-gold)')
       }

@@ -72,7 +72,9 @@ export const AdminListingsPage = () => {
       });
       closeModal();
     } catch (e: any) {
-      setError(e?.response?.errors?.[0]?.message ?? 'Failed to create listing.');
+      setError(
+        e?.response?.errors?.[0]?.message ?? 'Failed to create listing.'
+      );
     }
   };
 

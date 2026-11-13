@@ -1,18 +1,17 @@
 import { useState } from 'react';
-import { useAdminListings } from '../hooks/useAdminListings';
+import { useAdminListings, useDecantSizes } from '../hooks/useAdminListings';
 import { AdminLayout } from '../components/AdminLayout';
-import { StockCell } from '../components/StockCell';
+import { VolumeCell } from '../components/VolumeCell';
 import { Badge } from '../../../shared/components/Badge';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
 
 const INITIAL_FORM = {
   title: '',
-  price: '',
-  size: '',
   picture: '',
   vibe: '',
-  stock: '',
+  bottleMl: '',
+  volumeMl: '',
 };
 
 export const AdminListingsPage = () => {
@@ -23,8 +22,11 @@ export const AdminListingsPage = () => {
     isCreating,
     deleteListing,
   } = useAdminListings();
+  const { data: decantSizes = [] } = useDecantSizes();
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(INITIAL_FORM);
+  // Price per decant size, keyed by ml
+  const [prices, setPrices] = useState<Record<number, string>>({});
   const [error, setError] = useState('');
 
   const set =
@@ -32,30 +34,47 @@ export const AdminListingsPage = () => {
     (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const bottleMl = parseInt(form.bottleMl) || 0;
+  // ML LEFT defaults to a full bottle
+  const volumeMl = form.volumeMl === '' ? bottleMl : parseInt(form.volumeMl);
+
+  const closeModal = () => {
+    setForm(INITIAL_FORM);
+    setPrices({});
+    setError('');
+    setShowModal(false);
+  };
+
   const handleCreate = async () => {
-    if (!form.title || !form.price || !form.size || !form.picture) {
-      setError('Title, price, size and picture are required.');
+    if (!form.title || !form.picture || !bottleMl) {
+      setError('Title, picture and bottle size are required.');
+      return;
+    }
+    if (decantSizes.some((ml) => !(parseFloat(prices[ml]) > 0))) {
+      setError('Set a price for every size.');
       return;
     }
     setError('');
-    const stock = parseInt(form.stock) || 0;
     try {
       await createListing({
         title: form.title,
-        price: parseFloat(form.price),
-        size: form.size,
         picture: form.picture,
         vibe: form.vibe
           .split(',')
           .map((v) => v.trim())
           .filter(Boolean),
-        stock,
-        status: stock > 0 ? 'in_stock' : 'out_of_order',
+        bottleMl,
+        volumeMl,
+        sizes: decantSizes.map((sizeMl) => ({
+          sizeMl,
+          price: parseFloat(prices[sizeMl]),
+        })),
       });
-      setForm(INITIAL_FORM);
-      setShowModal(false);
+      closeModal();
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? 'Failed to create listing.');
+      setError(
+        e?.response?.errors?.[0]?.message ?? 'Failed to create listing.'
+      );
     }
   };
 
@@ -94,23 +113,21 @@ export const AdminListingsPage = () => {
           </div>
         ) : (
           <div
-            className="overflow-hidden"
+            className="overflow-x-auto"
             style={{ border: '1px solid var(--border)' }}
           >
             <table className="min-w-full text-sm">
               <thead>
                 <tr style={{ background: 'var(--bg-elevated)' }}>
-                  {['TITLE', 'PRICE', 'SIZE', 'STOCK', 'STATUS', ''].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="px-4 py-3 text-left text-xs tracking-[0.2em]"
-                        style={{ color: 'var(--text-dim)' }}
-                      >
-                        {h}
-                      </th>
-                    )
-                  )}
+                  {['TITLE', 'ML LEFT', 'SIZES', 'STATUS', ''].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left text-xs tracking-[0.2em]"
+                      style={{ color: 'var(--text-dim)' }}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -128,20 +145,24 @@ export const AdminListingsPage = () => {
                     >
                       {l.title}
                     </td>
+                    <td className="px-4 py-3">
+                      <VolumeCell listing={l} />
+                    </td>
                     <td
                       className="px-4 py-3 text-xs"
-                      style={{ color: 'var(--gold)' }}
-                    >
-                      {l.price.toLocaleString()}₮
-                    </td>
-                    <td
-                      className="px-4 py-3 text-xs tracking-widest"
                       style={{ color: 'var(--text-muted)' }}
                     >
-                      {l.size}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StockCell listing={l} />
+                      {l.sizes.length === 0
+                        ? 'No prices set'
+                        : l.sizes.map((s) => (
+                            <div key={s.sizeMl}>
+                              {s.sizeMl}ml ·{' '}
+                              <span style={{ color: 'var(--gold)' }}>
+                                {s.price.toLocaleString()}₮
+                              </span>{' '}
+                              · {s.available} left
+                            </div>
+                          ))}
                     </td>
                     <td className="px-4 py-3">
                       <Badge
@@ -165,7 +186,7 @@ export const AdminListingsPage = () => {
                 {!listings?.length && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={5}
                       className="px-4 py-12 text-center text-xs tracking-widest"
                       style={{ color: 'var(--text-dim)' }}
                     >
@@ -185,10 +206,11 @@ export const AdminListingsPage = () => {
           style={{ background: 'rgba(0,0,0,0.7)' }}
         >
           <div
-            className="w-full max-w-md p-8 space-y-5"
+            className="w-full max-w-md p-8 space-y-5 overflow-y-auto"
             style={{
               background: 'var(--bg-card)',
               border: '1px solid var(--border-gold)',
+              maxHeight: '90vh',
             }}
           >
             <div className="flex items-center justify-between">
@@ -199,7 +221,7 @@ export const AdminListingsPage = () => {
                 New Listing
               </h2>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 className="text-xs tracking-widest"
                 style={{ color: 'var(--text-dim)' }}
               >
@@ -208,32 +230,60 @@ export const AdminListingsPage = () => {
             </div>
             <Input
               label="TITLE"
-              placeholder="Oud & Rose"
+              placeholder="Dior Sauvage EDT"
               value={form.title}
               onChange={set('title')}
             />
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="PRICE (₮)"
+                label="BOTTLE SIZE (ML)"
                 type="number"
-                placeholder="49900"
-                value={form.price}
-                onChange={set('price')}
+                placeholder="100"
+                value={form.bottleMl}
+                onChange={set('bottleMl')}
               />
               <Input
-                label="STOCK"
+                label="ML LEFT"
                 type="number"
-                placeholder="10"
-                value={form.stock}
-                onChange={set('stock')}
+                placeholder={form.bottleMl || 'Full bottle'}
+                value={form.volumeMl}
+                onChange={set('volumeMl')}
               />
             </div>
-            <Input
-              label="SIZE"
-              placeholder="50ml"
-              value={form.size}
-              onChange={set('size')}
-            />
+
+            <div className="space-y-3">
+              <p
+                className="text-xs tracking-[0.2em]"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                PRICE PER DECANT (₮)
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                {decantSizes.map((sizeMl) => (
+                  <Input
+                    key={sizeMl}
+                    label={`${sizeMl}ML`}
+                    type="number"
+                    placeholder="0"
+                    value={prices[sizeMl] ?? ''}
+                    onChange={(e) =>
+                      setPrices((p) => ({ ...p, [sizeMl]: e.target.value }))
+                    }
+                  />
+                ))}
+              </div>
+              {/* What the bottle works out to, e.g. 100ml → 50 × 2ml */}
+              {volumeMl > 0 && (
+                <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
+                  {volumeMl}ml makes{' '}
+                  {decantSizes
+                    .map((ml) => `${Math.floor(volumeMl / ml)} × ${ml}ml`)
+                    .join(', ')}{' '}
+                  — sizes share the bottle, so selling one lowers the others.
+                </p>
+              )}
+            </div>
+
             <Input
               label="PICTURE URL"
               placeholder="https://..."
@@ -255,11 +305,7 @@ export const AdminListingsPage = () => {
               </p>
             )}
             <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setShowModal(false)}
-              >
+              <Button variant="outline" className="flex-1" onClick={closeModal}>
                 CANCEL
               </Button>
               <Button

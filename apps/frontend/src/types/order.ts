@@ -4,7 +4,10 @@ export interface Order {
   id: string;
   userId: string;
   listingId: string;
-  listing?: Pick<Listing, 'id' | 'title' | 'size' | 'picture' | 'price'>;
+  listing?: Pick<Listing, 'id' | 'title' | 'picture'>;
+  // Decant size bought and the price paid for it
+  sizeMl: number;
+  price: number;
   status: 'pending' | 'completed' | 'cancelled';
   buyerConfirmed: boolean;
   createdAt: string;

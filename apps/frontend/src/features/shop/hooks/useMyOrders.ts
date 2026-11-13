@@ -6,8 +6,20 @@ import type { Order } from '../../../types/order';
 const MY_ORDERS_QUERY = gql`
   query MyOrders {
     myOrders {
-      id status listingId createdAt cancelledAt completedAt buyerConfirmed
-      listing { id title size picture price }
+      id
+      status
+      listingId
+      sizeMl
+      price
+      createdAt
+      cancelledAt
+      completedAt
+      buyerConfirmed
+      listing {
+        id
+        title
+        picture
+      }
     }
   }
 `;
@@ -16,7 +28,9 @@ export const useMyOrders = () => {
   return useQuery<Order[]>({
     queryKey: ['orders'],
     queryFn: async () => {
-      const res = await graphQLClient.request<{ myOrders: Order[] }>(MY_ORDERS_QUERY);
+      const res = await graphQLClient.request<{ myOrders: Order[] }>(
+        MY_ORDERS_QUERY
+      );
       return res.myOrders;
     },
   });

@@ -1,15 +1,18 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useListing } from '../hooks/useListings';
 import { useCart } from '../hooks/useCart';
 import { Layout } from '../../../shared/components/Layout';
 import { Button } from '../../../shared/components/Button';
+import { QuantityStepper } from '../../../shared/components/QuantityStepper';
 
 export const ProductPage = () => {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: listing, isLoading, isError } = useListing(id);
   const { items, addItem, openCart } = useCart();
-  const inCart = items.some((i) => i.listing.id === id);
+  const [quantity, setQuantity] = useState(1);
+  const inCartQty = items.find((i) => i.listing.id === id)?.quantity ?? 0;
 
   if (isLoading) {
     return (
@@ -55,6 +58,9 @@ export const ProductPage = () => {
   }
 
   const outOfStock = listing.status === 'out_of_order' || listing.stock < 1;
+  // How many more the buyer can add on top of what's already in their cart
+  const remaining = Math.max(0, listing.stock - inCartQty);
+  const selected = Math.min(quantity, Math.max(remaining, 1));
 
   return (
     <Layout>
@@ -170,14 +176,51 @@ export const ProductPage = () => {
           </div>
 
           {/* Buying goes through the cart → QPay checkout, never directly. */}
-          <Button
-            onClick={() => (inCart ? openCart() : addItem(listing))}
-            disabled={outOfStock}
-            className="w-full"
-            size="lg"
-          >
-            {outOfStock ? 'UNAVAILABLE' : inCart ? 'VIEW CART' : 'ADD TO CART'}
-          </Button>
+          {outOfStock ? (
+            <Button disabled className="w-full" size="lg">
+              UNAVAILABLE
+            </Button>
+          ) : remaining === 0 ? (
+            <div className="space-y-3">
+              <p
+                className="text-xs tracking-widest"
+                style={{ color: 'var(--text-dim)' }}
+              >
+                ALL {listing.stock} AVAILABLE ARE IN YOUR CART
+              </p>
+              <Button onClick={openCart} className="w-full" size="lg">
+                VIEW CART
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {inCartQty > 0 && (
+                <p
+                  className="text-xs tracking-widest"
+                  style={{ color: 'var(--text-dim)' }}
+                >
+                  {inCartQty} ALREADY IN YOUR CART
+                </p>
+              )}
+              <div className="flex gap-3">
+                <QuantityStepper
+                  value={selected}
+                  max={remaining}
+                  onChange={setQuantity}
+                />
+                <Button
+                  onClick={() => {
+                    addItem(listing, selected);
+                    setQuantity(1);
+                  }}
+                  className="flex-1"
+                  size="lg"
+                >
+                  ADD TO CART
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </Layout>

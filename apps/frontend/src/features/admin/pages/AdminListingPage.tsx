@@ -145,7 +145,9 @@ export const AdminListingsPage = () => {
                     </td>
                     <td className="px-4 py-3">
                       <Badge
-                        label={l.status === 'in_stock' ? 'IN STOCK' : 'SOLD OUT'}
+                        label={
+                          l.status === 'in_stock' ? 'IN STOCK' : 'SOLD OUT'
+                        }
                         variant={l.status === 'in_stock' ? 'success' : 'danger'}
                       />
                     </td>
@@ -245,7 +247,10 @@ export const AdminListingsPage = () => {
               onChange={set('vibe')}
             />
             {error && (
-              <p className="text-xs tracking-widest" style={{ color: '#f87171' }}>
+              <p
+                className="text-xs tracking-widest"
+                style={{ color: '#f87171' }}
+              >
                 {error}
               </p>
             )}

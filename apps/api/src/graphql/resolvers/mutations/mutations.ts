@@ -108,7 +108,14 @@ export const mutations = {
     requireAdmin(ctx);
     const listing = await prisma.listing.findUnique({ where: { id: args.id } });
     if (!listing) throw new GraphQLError('Listing not found');
-    return prisma.listing.update({ where: { id: args.id }, data: args.input });
+
+    const data = { ...args.input };
+    if (data.stock !== undefined && data.stock !== null) {
+      if (data.stock < 0) throw new GraphQLError('Stock cannot be negative');
+      // Keep the sold-out flag in step with stock unless it was set explicitly
+      data.status ??= data.stock > 0 ? 'in_stock' : 'out_of_order';
+    }
+    return prisma.listing.update({ where: { id: args.id }, data });
   },
 
   deleteListing: async (_: any, args: { id: string }, ctx: GraphQLContext) => {

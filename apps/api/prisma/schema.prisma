@@ -22,20 +22,33 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+// A listing is one bottle. Its ml are shared by the decant sizes: selling a
+// 10ml decant takes 10ml out of volumeMl, which every size draws from.
 model Listing {
   id        String         @id @default(uuid())
   status    ListingStatus  @default(in_stock)
   title     String
-  size      String
   vibe      String[]
   picture   String
-  price     Decimal        @db.Decimal(10,2)
-  stock     Int            @default(1)
+  bottleMl  Int            @default(0) // full bottle size, e.g. 100
+  volumeMl  Int            @default(0) // ml left to decant
 
+  sizes     ListingSize[]
   orders    Order[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// The price of one decant size of a listing, e.g. 5ml for 18,000₮
+model ListingSize {
+  id        String   @id @default(uuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  sizeMl    Int
+  price     Decimal  @db.Decimal(10,2)
+
+  @@unique([listingId, sizeMl])
 }
 
 model Order {
@@ -47,6 +60,8 @@ model Order {
 
   listingId       String
   listing         Listing      @relation(fields: [listingId], references: [id])
+  sizeMl          Int          @default(0)
+  price           Decimal      @default(0) @db.Decimal(10,2) // price paid
 
   buyerConfirmed  Boolean      @default(false)
 

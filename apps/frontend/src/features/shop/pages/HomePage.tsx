@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useListings } from '../hooks/useListings';
 import { ProductCard } from '../components/ProductCard';
-import { useCart } from '../hooks/useCart';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../../../shared/components/Layout';
 
@@ -14,7 +13,6 @@ export default function HomePage() {
   const { data, isLoading, isError } = useListings(page, LIMIT);
   const listings = data?.data;
   const pageInfo = data?.pageInfo;
-  const { addItem } = useCart();
   const navigate = useNavigate();
 
   return (
@@ -172,15 +170,8 @@ export default function HomePage() {
                 style={{ animationDelay: `${Math.min(i, 8) * 0.06}s` }}
               >
                 <ProductCard
-                  id={item.id}
-                  title={item.title}
-                  price={item.price}
-                  picture={item.picture}
-                  vibes={item.vibe}
-                  size={item.size}
-                  status={item.status}
+                  listing={item}
                   onClick={() => navigate(`/product/${item.id}`)}
-                  onAddToCart={() => addItem(item)}
                 />
               </div>
             ))}

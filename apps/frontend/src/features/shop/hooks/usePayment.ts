@@ -53,11 +53,12 @@ export const usePayment = () => {
     }, 3000);
   };
 
-  const createPayment = async (listingIds: string[], onPaid: () => void) => {
+  // units: one "listingId:sizeMl" per decant
+  const createPayment = async (units: string[], onPaid: () => void) => {
     setStatus('creating');
     setError('');
     try {
-      const res = await api.post('/payments/create', { listingIds });
+      const res = await api.post('/payments/create', { units });
       setPayment(res.data);
       setStatus('pending');
       startPolling(res.data.paymentId, onPaid);

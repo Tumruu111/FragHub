@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { isAuthenticated } from '../../../shared/auth/token';
 import { useQueryClient } from '@tanstack/react-query';
 import { QuantityStepper } from '../../../shared/components/QuantityStepper';
+import { priceOf } from '../../../types/listing';
 
 export const CartDrawer = () => {
   const {
@@ -13,6 +14,7 @@ export const CartDrawer = () => {
     setQuantity,
     removeItem,
     clearCart,
+    mlLeft,
     total,
     isOpen,
     closeCart,
@@ -29,11 +31,12 @@ export const CartDrawer = () => {
       navigate('/login');
       return;
     }
-    // The API takes one id per unit: 2 × a is ['a', 'a'].
-    const listingIds = items.flatMap(({ listing, quantity }) =>
-      Array.from({ length: quantity }, () => listing.id)
+    // The API takes one "listingId:sizeMl" per decant: 2 × 5ml of a is
+    // ['a:5', 'a:5'].
+    const units = items.flatMap(({ listing, sizeMl, quantity }) =>
+      Array.from({ length: quantity }, () => `${listing.id}:${sizeMl}`)
     );
-    createPayment(listingIds, () => {
+    createPayment(units, () => {
       clearCart();
       qc.invalidateQueries({ queryKey: ['listings'] });
       qc.invalidateQueries({ queryKey: ['orders'] });
@@ -92,9 +95,9 @@ export const CartDrawer = () => {
               </button>
             </div>
           ) : (
-            items.map(({ listing, quantity }, i) => (
+            items.map(({ listing, sizeMl, quantity }, i) => (
               <div
-                key={listing.id}
+                key={`${listing.id}:${sizeMl}`}
                 className="drawer-item"
                 style={{ animationDelay: `${i * 0.05}s` }}
               >
@@ -107,21 +110,21 @@ export const CartDrawer = () => {
                 </div>
                 <div className="drawer-item-info">
                   <p className="drawer-item-title">{listing.title}</p>
-                  <p className="drawer-item-size">{listing.size}</p>
+                  <p className="drawer-item-size">{sizeMl}ml decant</p>
                   <QuantityStepper
                     size="sm"
                     value={quantity}
-                    max={listing.stock}
-                    onChange={(q) => setQuantity(listing.id, q)}
+                    max={quantity + Math.floor(mlLeft(listing) / sizeMl)}
+                    onChange={(q) => setQuantity(listing.id, sizeMl, q)}
                   />
                   <p className="drawer-item-price">
-                    {(Number(listing.price) * quantity).toLocaleString()}₮
+                    {(priceOf(listing, sizeMl) * quantity).toLocaleString()}₮
                   </p>
                 </div>
                 <button
                   className="drawer-item-remove"
-                  onClick={() => removeItem(listing.id)}
-                  aria-label={`Remove ${listing.title}`}
+                  onClick={() => removeItem(listing.id, sizeMl)}
+                  aria-label={`Remove ${sizeMl}ml ${listing.title}`}
                 >
                   <Trash2 size={14} />
                 </button>

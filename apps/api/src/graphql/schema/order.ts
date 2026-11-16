@@ -5,6 +5,10 @@ type Order {
   userId: ID!
   listingId: ID!
   listing: Listing!
+  "Decant size bought, in ml"
+  sizeMl: Int!
+  "Price paid for this decant"
+  price: Float!
   buyerConfirmed: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!

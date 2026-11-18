@@ -6,15 +6,13 @@ import { config } from '../../../config';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Role } from '../../../../generated/prisma/enums';
-import { validateRegistration } from '../../../lib/validation';
+import { loginSchema, registerSchema, validate } from '../../../lib/validation';
 
 export const adminLogin = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password)
-      return res
-        .status(400)
-        .json({ message: 'Email and password are required' });
+    const body = validate(loginSchema, req.body);
+    if (!body.ok) return res.status(400).json({ message: body.error });
+    const { email, password } = body.data;
     const admin = await prisma.user.findUnique({ where: { email } });
     if (!admin || admin.role !== Role.Admin)
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -35,14 +33,14 @@ export const adminLogin = async (req: Request, res: Response) => {
 
 export const adminRegister = async (req: Request, res: Response) => {
   try {
-    const { email, name, password, secret } = req.body;
-    if (!secret)
+    const { secret } = req.body ?? {};
+    if (typeof secret !== 'string' || !secret)
       return res.status(400).json({ message: 'All fields are required' });
-    if (secret !== config.auth.adminSecretKey)
+    if (!config.auth.adminSecretKey || secret !== config.auth.adminSecretKey)
       return res.status(403).json({ message: 'Invalid secret key' });
-    const validationError = validateRegistration({ name, email, password });
-    if (validationError)
-      return res.status(400).json({ message: validationError });
+    const body = validate(registerSchema, req.body);
+    if (!body.ok) return res.status(400).json({ message: body.error });
+    const { email, name, password } = body.data;
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing)
       return res.status(400).json({ message: 'Email already in use' });

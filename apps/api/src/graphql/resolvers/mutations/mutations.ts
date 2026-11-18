@@ -4,10 +4,7 @@ import bcrypt from 'bcrypt';
 import { requireAdmin, requireAuth } from '../../guards';
 import type { GraphQLContext } from '../../context';
 import { config } from '../../../config';
-import {
-  validateRegistration,
-  validateUserUpdate,
-} from '../../../lib/validation';
+import { validateUserUpdate } from '../../../lib/validation';
 import {
   SMALLEST_SIZE_ML,
   statusForVolume,
@@ -16,7 +13,7 @@ import {
   type SizePrice,
 } from '../../../lib/decants';
 
-interface CreateUserInput {
+interface UserFields {
   name: string;
   email: string;
   password: string;
@@ -49,22 +46,12 @@ interface UpdateListingInput {
   sizes?: SizePrice[];
 }
 
+// Sign-up is REST only (POST /api/auth/register), which has the strict
+// auth rate limit. There is intentionally no GraphQL mutation to create users.
 export const mutations = {
-  createUser: async (_: any, args: { input: CreateUserInput }) => {
-    const { name, email, password } = args.input;
-    const validationError = validateRegistration({ name, email, password });
-    if (validationError) throw new GraphQLError(validationError);
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) throw new GraphQLError('Email already in use');
-    const hashed = await bcrypt.hash(password, config.auth.bcryptRounds);
-    return prisma.user.create({
-      data: { name: name.trim(), email, password: hashed },
-    });
-  },
-
   updateUser: async (
     _: any,
-    args: { id: string; input: Partial<CreateUserInput> },
+    args: { id: string; input: Partial<UserFields> },
     ctx: GraphQLContext
   ) => {
     const caller = requireAuth(ctx);
@@ -76,7 +63,7 @@ export const mutations = {
     if (validationError) throw new GraphQLError(validationError);
     const user = await prisma.user.findUnique({ where: { id: args.id } });
     if (!user) throw new GraphQLError('User not found');
-    const data: Partial<CreateUserInput> = { ...args.input };
+    const data: Partial<UserFields> = { ...args.input };
     if (args.input.name) data.name = args.input.name.trim();
     if (args.input.password)
       data.password = await bcrypt.hash(

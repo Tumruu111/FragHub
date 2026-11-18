@@ -68,7 +68,11 @@ const OrderActions = ({ order }: { order: AdminOrder }) => {
           >
             MARK COMPLETED
           </Button>
-          <Button size="sm" variant="danger" onClick={() => setConfirming(true)}>
+          <Button
+            size="sm"
+            variant="danger"
+            onClick={() => setConfirming(true)}
+          >
             CANCEL & REFUND
           </Button>
         </div>
@@ -185,9 +189,12 @@ export const AdminOrdersPage = () => {
                       {order.user.email}
                     </a>
                   </p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>
-                    {new Date(order.createdAt).toLocaleString('en-US')} ·{' '}
-                    #{order.id.slice(0, 8).toUpperCase()}
+                  <p
+                    className="text-xs mt-1"
+                    style={{ color: 'var(--text-dim)' }}
+                  >
+                    {new Date(order.createdAt).toLocaleString('en-US')} · #
+                    {order.id.slice(0, 8).toUpperCase()}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-2">

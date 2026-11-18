@@ -39,6 +39,8 @@ export const apolloServer = new ApolloServer<GraphQLContext>({
     Order: {
       listing: (parent: { listingId: string }) =>
         prisma.listing.findUnique({ where: { id: parent.listingId } }),
+      user: (parent: { userId: string }) =>
+        prisma.user.findUnique({ where: { id: parent.userId } }),
       price: (parent: { price: unknown }) => Number(parent.price),
     },
   },

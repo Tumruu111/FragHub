@@ -22,6 +22,14 @@ interface CreateUserInput {
   password: string;
 }
 
+// Why a pending-only order update matched nothing
+const settledError = async (orderId: string) => {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  return new GraphQLError(
+    order ? `Order is already ${order.status}` : 'Order not found'
+  );
+};
+
 interface CreateListingInput {
   title: string;
   vibe: string[];
@@ -90,40 +98,52 @@ export const mutations = {
   // Orders are only created by the QPay flow (modules/payments), after the
   // payment is confirmed. There is intentionally no mutation to place one.
 
+  // Orders are paid for, so only an admin settles them. Customers ask to
+  // cancel by contacting the shop, and the admin refunds them in QPay.
+
+  completeOrder: async (
+    _: any,
+    args: { orderId: string },
+    ctx: GraphQLContext
+  ) => {
+    requireAdmin(ctx);
+    const done = await prisma.order.updateMany({
+      where: { id: args.orderId, status: 'pending' },
+      data: { status: 'completed', completedAt: new Date() },
+    });
+    if (done.count === 0) throw await settledError(args.orderId);
+    return prisma.order.findUnique({ where: { id: args.orderId } });
+  },
+
   cancelOrder: async (
     _: any,
     args: { orderId: string },
     ctx: GraphQLContext
   ) => {
-    const caller = requireAuth(ctx);
-    const order = await prisma.order.findUnique({
-      where: { id: args.orderId },
-    });
-    if (!order) throw new GraphQLError('Order not found');
-    if (order.userId !== caller.id && caller.role !== 'Admin')
-      throw new GraphQLError('Forbidden', {
-        extensions: { code: 'FORBIDDEN' },
-      });
-    if (order.status === 'cancelled')
-      throw new GraphQLError('Order is already cancelled');
-    if (order.status === 'completed')
-      throw new GraphQLError('Completed orders cannot be cancelled');
-    // Put the decant's ml back in the bottle
-    const [updated] = await prisma.$transaction([
-      prisma.order.update({
-        where: { id: args.orderId },
+    requireAdmin(ctx);
+    return prisma.$transaction(async (tx) => {
+      // Only a pending order can be cancelled. Doing it as a conditional
+      // update means two admins clicking at once can't return the ml twice.
+      const cancelled = await tx.order.updateMany({
+        where: { id: args.orderId, status: 'pending' },
         data: { status: 'cancelled', cancelledAt: new Date() },
-      }),
-      prisma.listing.update({
+      });
+      if (cancelled.count === 0) throw await settledError(args.orderId);
+
+      // Put the decant's ml back in the bottle
+      const order = await tx.order.findUniqueOrThrow({
+        where: { id: args.orderId },
+      });
+      await tx.listing.update({
         where: { id: order.listingId },
         data: { volumeMl: { increment: order.sizeMl } },
-      }),
-      prisma.listing.updateMany({
+      });
+      await tx.listing.updateMany({
         where: { id: order.listingId, volumeMl: { gte: SMALLEST_SIZE_ML } },
         data: { status: 'in_stock' },
-      }),
-    ]);
-    return updated;
+      });
+      return order;
+    });
   },
 
   createListing: async (

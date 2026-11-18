@@ -7,6 +7,7 @@ import { RegisterPage } from '../features/auth/RegisterPage';
 import { AdminLoginPage } from '../features/admin/pages/AdminLoginPage';
 import { AdminDashboardPage } from '../features/admin/pages/AdminDashboardPage';
 import { AdminListingsPage } from '../features/admin/pages/AdminListingPage';
+import { AdminOrdersPage } from '../features/admin/pages/AdminOrdersPage';
 
 export default function AppRouter() {
   return (
@@ -19,6 +20,7 @@ export default function AppRouter() {
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
       <Route path="/admin/listings" element={<AdminListingsPage />} />
+      <Route path="/admin/orders" element={<AdminOrdersPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -7,6 +7,7 @@ import { api } from '../../../shared/api';
 const NAV = [
   { label: 'DASHBOARD', path: '/admin/dashboard' },
   { label: 'LISTINGS', path: '/admin/listings' },
+  { label: 'ORDERS', path: '/admin/orders' },
 ];
 
 export const AdminLayout: FC<{ children: ReactNode }> = ({ children }) => {

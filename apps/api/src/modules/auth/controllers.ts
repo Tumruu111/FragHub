@@ -6,14 +6,13 @@ import { blacklistToken } from '../../lib/tokenBlacklist';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Role } from '../../../generated/prisma/enums';
-import { validateRegistration } from '../../lib/validation';
+import { loginSchema, registerSchema, validate } from '../../lib/validation';
 
 export const userRegister = async (req: Request, res: Response) => {
   try {
-    const { name, email, password } = req.body;
-    const validationError = validateRegistration({ name, email, password });
-    if (validationError)
-      return res.status(400).json({ message: validationError });
+    const body = validate(registerSchema, req.body);
+    if (!body.ok) return res.status(400).json({ message: body.error });
+    const { name, email, password } = body.data;
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing)
@@ -36,12 +35,9 @@ export const userRegister = async (req: Request, res: Response) => {
 
 export const userLogin = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: 'Email and password are required' });
-    }
+    const body = validate(loginSchema, req.body);
+    if (!body.ok) return res.status(400).json({ message: body.error });
+    const { email, password } = body.data;
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });

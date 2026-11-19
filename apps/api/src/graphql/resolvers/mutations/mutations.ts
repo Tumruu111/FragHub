@@ -4,7 +4,11 @@ import bcrypt from 'bcrypt';
 import { requireAdmin, requireAuth } from '../../guards';
 import type { GraphQLContext } from '../../context';
 import { config } from '../../../config';
-import { validateUserUpdate } from '../../../lib/validation';
+import {
+  listingDetailsSchema,
+  validate,
+  validateUserUpdate,
+} from '../../../lib/validation';
 import {
   SMALLEST_SIZE_ML,
   statusForVolume,
@@ -139,14 +143,18 @@ export const mutations = {
     ctx: GraphQLContext
   ) => {
     requireAdmin(ctx);
-    const { sizes, volumeMl, ...rest } = args.input;
-    const ml = volumeMl ?? rest.bottleMl;
+    const { sizes, volumeMl, bottleMl, ...rest } = args.input;
+    const details = validate(listingDetailsSchema, rest);
+    const ml = volumeMl ?? bottleMl;
     const error =
-      validateVolume(rest.bottleMl, ml) ?? validateSizePrices(sizes);
-    if (error) throw new GraphQLError(error);
+      details.error ??
+      validateVolume(bottleMl, ml) ??
+      validateSizePrices(sizes);
+    if (error || !details.data) throw new GraphQLError(error ?? 'Invalid');
     return prisma.listing.create({
       data: {
-        ...rest,
+        ...details.data,
+        bottleMl,
         volumeMl: ml,
         status: statusForVolume(ml),
         sizes: { create: sizes },
@@ -163,10 +171,18 @@ export const mutations = {
     const listing = await prisma.listing.findUnique({ where: { id: args.id } });
     if (!listing) throw new GraphQLError('Listing not found');
 
-    const { sizes, ...input } = args.input;
+    const { sizes, title, picture, vibe, ...input } = args.input;
+    // Only the fields that were sent; GraphQL passes omitted ones as null
+    const details = validate(
+      listingDetailsSchema.partial(),
+      Object.fromEntries(
+        Object.entries({ title, picture, vibe }).filter(([, v]) => v != null)
+      )
+    );
     const bottleMl = input.bottleMl ?? listing.bottleMl;
     const volumeMl = input.volumeMl ?? listing.volumeMl;
     const error =
+      details.error ??
       validateVolume(bottleMl, volumeMl) ??
       (sizes ? validateSizePrices(sizes) : null);
     if (error) throw new GraphQLError(error);
@@ -175,6 +191,7 @@ export const mutations = {
       where: { id: args.id },
       data: {
         ...input,
+        ...details.data,
         bottleMl,
         volumeMl,
         // Keep the sold-out flag in step with the ml left unless set explicitly

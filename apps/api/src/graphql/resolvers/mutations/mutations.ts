@@ -5,7 +5,8 @@ import { requireAdmin, requireAuth } from '../../guards';
 import type { GraphQLContext } from '../../context';
 import { config } from '../../../config';
 import {
-  validateRegistration,
+  listingDetailsSchema,
+  validate,
   validateUserUpdate,
 } from '../../../lib/validation';
 import {
@@ -16,11 +17,19 @@ import {
   type SizePrice,
 } from '../../../lib/decants';
 
-interface CreateUserInput {
+interface UserFields {
   name: string;
   email: string;
   password: string;
 }
+
+// Why a pending-only order update matched nothing
+const settledError = async (orderId: string) => {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  return new GraphQLError(
+    order ? `Order is already ${order.status}` : 'Order not found'
+  );
+};
 
 interface CreateListingInput {
   title: string;
@@ -41,22 +50,12 @@ interface UpdateListingInput {
   sizes?: SizePrice[];
 }
 
+// Sign-up is REST only (POST /api/auth/register), which has the strict
+// auth rate limit. There is intentionally no GraphQL mutation to create users.
 export const mutations = {
-  createUser: async (_: any, args: { input: CreateUserInput }) => {
-    const { name, email, password } = args.input;
-    const validationError = validateRegistration({ name, email, password });
-    if (validationError) throw new GraphQLError(validationError);
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) throw new GraphQLError('Email already in use');
-    const hashed = await bcrypt.hash(password, config.auth.bcryptRounds);
-    return prisma.user.create({
-      data: { name: name.trim(), email, password: hashed },
-    });
-  },
-
   updateUser: async (
     _: any,
-    args: { id: string; input: Partial<CreateUserInput> },
+    args: { id: string; input: Partial<UserFields> },
     ctx: GraphQLContext
   ) => {
     const caller = requireAuth(ctx);
@@ -68,7 +67,7 @@ export const mutations = {
     if (validationError) throw new GraphQLError(validationError);
     const user = await prisma.user.findUnique({ where: { id: args.id } });
     if (!user) throw new GraphQLError('User not found');
-    const data: Partial<CreateUserInput> = { ...args.input };
+    const data: Partial<UserFields> = { ...args.input };
     if (args.input.name) data.name = args.input.name.trim();
     if (args.input.password)
       data.password = await bcrypt.hash(
@@ -90,40 +89,52 @@ export const mutations = {
   // Orders are only created by the QPay flow (modules/payments), after the
   // payment is confirmed. There is intentionally no mutation to place one.
 
+  // Orders are paid for, so only an admin settles them. Customers ask to
+  // cancel by contacting the shop, and the admin refunds them in QPay.
+
+  completeOrder: async (
+    _: any,
+    args: { orderId: string },
+    ctx: GraphQLContext
+  ) => {
+    requireAdmin(ctx);
+    const done = await prisma.order.updateMany({
+      where: { id: args.orderId, status: 'pending' },
+      data: { status: 'completed', completedAt: new Date() },
+    });
+    if (done.count === 0) throw await settledError(args.orderId);
+    return prisma.order.findUnique({ where: { id: args.orderId } });
+  },
+
   cancelOrder: async (
     _: any,
     args: { orderId: string },
     ctx: GraphQLContext
   ) => {
-    const caller = requireAuth(ctx);
-    const order = await prisma.order.findUnique({
-      where: { id: args.orderId },
-    });
-    if (!order) throw new GraphQLError('Order not found');
-    if (order.userId !== caller.id && caller.role !== 'Admin')
-      throw new GraphQLError('Forbidden', {
-        extensions: { code: 'FORBIDDEN' },
-      });
-    if (order.status === 'cancelled')
-      throw new GraphQLError('Order is already cancelled');
-    if (order.status === 'completed')
-      throw new GraphQLError('Completed orders cannot be cancelled');
-    // Put the decant's ml back in the bottle
-    const [updated] = await prisma.$transaction([
-      prisma.order.update({
-        where: { id: args.orderId },
+    requireAdmin(ctx);
+    return prisma.$transaction(async (tx) => {
+      // Only a pending order can be cancelled. Doing it as a conditional
+      // update means two admins clicking at once can't return the ml twice.
+      const cancelled = await tx.order.updateMany({
+        where: { id: args.orderId, status: 'pending' },
         data: { status: 'cancelled', cancelledAt: new Date() },
-      }),
-      prisma.listing.update({
+      });
+      if (cancelled.count === 0) throw await settledError(args.orderId);
+
+      // Put the decant's ml back in the bottle
+      const order = await tx.order.findUniqueOrThrow({
+        where: { id: args.orderId },
+      });
+      await tx.listing.update({
         where: { id: order.listingId },
         data: { volumeMl: { increment: order.sizeMl } },
-      }),
-      prisma.listing.updateMany({
+      });
+      await tx.listing.updateMany({
         where: { id: order.listingId, volumeMl: { gte: SMALLEST_SIZE_ML } },
         data: { status: 'in_stock' },
-      }),
-    ]);
-    return updated;
+      });
+      return order;
+    });
   },
 
   createListing: async (
@@ -132,14 +143,18 @@ export const mutations = {
     ctx: GraphQLContext
   ) => {
     requireAdmin(ctx);
-    const { sizes, volumeMl, ...rest } = args.input;
-    const ml = volumeMl ?? rest.bottleMl;
+    const { sizes, volumeMl, bottleMl, ...rest } = args.input;
+    const details = validate(listingDetailsSchema, rest);
+    const ml = volumeMl ?? bottleMl;
     const error =
-      validateVolume(rest.bottleMl, ml) ?? validateSizePrices(sizes);
-    if (error) throw new GraphQLError(error);
+      details.error ??
+      validateVolume(bottleMl, ml) ??
+      validateSizePrices(sizes);
+    if (error || !details.data) throw new GraphQLError(error ?? 'Invalid');
     return prisma.listing.create({
       data: {
-        ...rest,
+        ...details.data,
+        bottleMl,
         volumeMl: ml,
         status: statusForVolume(ml),
         sizes: { create: sizes },
@@ -156,10 +171,18 @@ export const mutations = {
     const listing = await prisma.listing.findUnique({ where: { id: args.id } });
     if (!listing) throw new GraphQLError('Listing not found');
 
-    const { sizes, ...input } = args.input;
+    const { sizes, title, picture, vibe, ...input } = args.input;
+    // Only the fields that were sent; GraphQL passes omitted ones as null
+    const details = validate(
+      listingDetailsSchema.partial(),
+      Object.fromEntries(
+        Object.entries({ title, picture, vibe }).filter(([, v]) => v != null)
+      )
+    );
     const bottleMl = input.bottleMl ?? listing.bottleMl;
     const volumeMl = input.volumeMl ?? listing.volumeMl;
     const error =
+      details.error ??
       validateVolume(bottleMl, volumeMl) ??
       (sizes ? validateSizePrices(sizes) : null);
     if (error) throw new GraphQLError(error);
@@ -168,6 +191,7 @@ export const mutations = {
       where: { id: args.id },
       data: {
         ...input,
+        ...details.data,
         bottleMl,
         volumeMl,
         // Keep the sold-out flag in step with the ml left unless set explicitly

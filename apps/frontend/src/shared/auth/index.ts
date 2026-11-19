@@ -1,1 +1,9 @@
-export { setToken, getToken, clearToken, isAuthenticated } from './token';
+export {
+  setToken,
+  getToken,
+  clearToken,
+  getSession,
+  isAuthenticated,
+  isAdmin,
+  endExpiredSession,
+} from './token';

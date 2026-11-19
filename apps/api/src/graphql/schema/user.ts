@@ -9,12 +9,6 @@ type User {
   updatedAt: DateTime!
 }
 
-input CreateUserInput {
-  name: String!
-  email: String!
-  password: String!
-}
-
 input UpdateUserInput {
   name: String
   email: String
@@ -26,8 +20,8 @@ extend type Query {
   user(id: ID!): User
 }
 
+# Sign-up is REST only: POST /api/auth/register
 extend type Mutation {
-  createUser(input: CreateUserInput!): User!
   deleteUser(id: ID!): Boolean!
   updateUser(id: ID!, input: UpdateUserInput!): User!
 }

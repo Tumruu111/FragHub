@@ -5,6 +5,7 @@ type Order {
   userId: ID!
   listingId: ID!
   listing: Listing!
+  user: User!
   "Decant size bought, in ml"
   sizeMl: Int!
   "Price paid for this decant"
@@ -42,6 +43,9 @@ extend type Query {
 }
 
 extend type Mutation {
+  "Admin only: the decant was handed over or delivered"
+  completeOrder(orderId: ID!): Order!
+  "Admin only: puts the ml back; the refund itself is done in QPay"
   cancelOrder(orderId: ID!): Order!
 }
 `;

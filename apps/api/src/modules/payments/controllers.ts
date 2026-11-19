@@ -6,6 +6,8 @@ import { sendEmail } from '../../lib/email';
 import { getUserFromRequest } from '../../lib/auth';
 import { config } from '../../config';
 import { parseUnit, SMALLEST_SIZE_ML } from '../../lib/decants';
+import { cartTotal, findShortage, groupUnits } from '../../lib/cart';
+import { createPaymentSchema, validate } from '../../lib/validation';
 import { PaymentStatus } from '../../../generated/prisma/enums';
 
 // A payment QPay may still report as paid. 'cancelled' is included because the
@@ -15,20 +17,12 @@ const UNSETTLED: PaymentStatus[] = [
   PaymentStatus.cancelled,
 ];
 
-const MAX_UNITS_PER_ORDER = 50;
-
 // A payment stores one unit per decant bought, as "listingId:sizeMl" (see
 // lib/decants), in its listingIds column. This groups them into lines of
 // listing × size × quantity with each size's current price. `missing` is true
 // when a unit's listing or size no longer exists.
 const loadCartLines = async (units: string[]) => {
-  const counts = new Map<string, number>();
-  for (const unit of units) counts.set(unit, (counts.get(unit) ?? 0) + 1);
-
-  const wanted = [...counts].flatMap(([unit, quantity]) => {
-    const parsed = parseUnit(unit);
-    return parsed ? [{ ...parsed, quantity }] : [];
-  });
+  const { lines: wanted, distinct } = groupUnits(units);
   const listings = await prisma.listing.findMany({
     where: { id: { in: wanted.map((w) => w.listingId) } },
     include: { sizes: true },
@@ -41,7 +35,7 @@ const loadCartLines = async (units: string[]) => {
       ? [{ listing, sizeMl, price: Number(size.price), quantity }]
       : [];
   });
-  return { lines, missing: lines.length !== counts.size };
+  return { lines, missing: lines.length !== distinct };
 };
 
 const lineSize = (sizeMl: number, quantity: number) =>
@@ -57,7 +51,7 @@ const sendOrderConfirmation = async (
   if (!user) return;
 
   const { lines } = await loadCartLines(units);
-  const total = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
+  const total = cartTotal(lines);
 
   await sendEmail({
     to: user.email,
@@ -188,17 +182,9 @@ export const createPayment = async (req: Request, res: Response) => {
   if (!user) return res.status(401).json({ message: 'Unauthorized' });
 
   try {
-    const { units } = req.body as { units: unknown };
-    if (
-      !Array.isArray(units) ||
-      !units.length ||
-      !units.every((u) => typeof u === 'string' && parseUnit(u))
-    )
-      return res.status(400).json({ message: 'No items provided' });
-    if (units.length > MAX_UNITS_PER_ORDER)
-      return res.status(400).json({
-        message: `You can order at most ${MAX_UNITS_PER_ORDER} items at once`,
-      });
+    const body = validate(createPaymentSchema, req.body);
+    if (!body.ok) return res.status(400).json({ message: body.error });
+    const { units } = body.data;
 
     const { lines, missing } = await loadCartLines(units);
     if (missing)
@@ -206,29 +192,10 @@ export const createPayment = async (req: Request, res: Response) => {
         .status(400)
         .json({ message: 'One or more items are no longer available' });
 
-    // Every size draws from the same bottle, so check the total ml per listing
-    const mlWanted = new Map<string, number>();
-    for (const { listing, sizeMl, quantity } of lines)
-      mlWanted.set(
-        listing.id,
-        (mlWanted.get(listing.id) ?? 0) + sizeMl * quantity
-      );
-    const short = lines.find(
-      ({ listing }) =>
-        listing.status === 'out_of_order' ||
-        listing.volumeMl < (mlWanted.get(listing.id) ?? 0)
-    );
-    if (short) {
-      const { title, volumeMl, status } = short.listing;
-      return res.status(400).json({
-        message:
-          status === 'out_of_order' || volumeMl < SMALLEST_SIZE_ML
-            ? `"${title}" is out of stock`
-            : `Only ${volumeMl}ml of "${title}" left`,
-      });
-    }
+    const shortage = findShortage(lines);
+    if (shortage) return res.status(400).json({ message: shortage });
 
-    const amount = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
+    const amount = cartTotal(lines);
 
     // Create payment record first so we have an ID for the callback
     const payment = await prisma.payment.create({

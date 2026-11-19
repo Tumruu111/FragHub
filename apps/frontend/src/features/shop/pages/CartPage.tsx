@@ -1,7 +1,5 @@
 import { useMyOrders } from '../hooks/useMyOrders';
-import { useCancelOrder } from '../hooks/useOrders';
 import { Layout } from '../../../shared/components/Layout';
-import { Button } from '../../../shared/components/Button';
 import { Badge } from '../../../shared/components/Badge';
 import type { Order } from '../../../types/order';
 import type { FC } from 'react';
@@ -11,7 +9,6 @@ const statusVariant = (s: Order['status']) =>
 
 const OrderRow: FC<{ order: Order }> = ({ order }) => {
   const listing = order.listing;
-  const cancel = useCancelOrder();
 
   return (
     <div
@@ -67,16 +64,6 @@ const OrderRow: FC<{ order: Order }> = ({ order }) => {
         <span className="font-display text-lg" style={{ color: 'var(--gold)' }}>
           {order.price.toLocaleString()}₮
         </span>
-        {order.status === 'pending' && (
-          <Button
-            variant="danger"
-            size="sm"
-            loading={cancel.isPending}
-            onClick={() => cancel.mutate(order.id)}
-          >
-            CANCEL
-          </Button>
-        )}
       </div>
     </div>
   );
@@ -145,6 +132,21 @@ export const CartPage = () => {
             {active.map((o) => (
               <OrderRow key={o.id} order={o} />
             ))}
+            {/* Orders are paid, so cancelling means a refund — done by the shop */}
+            <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
+              Need to cancel? Contact us at{' '}
+              <a
+                href="mailto:parfumsveritas@gmail.com"
+                style={{ color: 'var(--gold)' }}
+              >
+                parfumsveritas@gmail.com
+              </a>{' '}
+              or{' '}
+              <a href="tel:+97699028893" style={{ color: 'var(--gold)' }}>
+                9902 8893
+              </a>{' '}
+              and we&apos;ll refund you.
+            </p>
           </section>
         )}
 

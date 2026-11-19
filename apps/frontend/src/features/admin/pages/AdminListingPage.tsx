@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAdminListings, useDecantSizes } from '../hooks/useAdminListings';
 import { AdminLayout } from '../components/AdminLayout';
 import { VolumeCell } from '../components/VolumeCell';
+import { SizesCell } from '../components/SizesCell';
 import { Badge } from '../../../shared/components/Badge';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
@@ -152,17 +153,7 @@ export const AdminListingsPage = () => {
                       className="px-4 py-3 text-xs"
                       style={{ color: 'var(--text-muted)' }}
                     >
-                      {l.sizes.length === 0
-                        ? 'No prices set'
-                        : l.sizes.map((s) => (
-                            <div key={s.sizeMl}>
-                              {s.sizeMl}ml ·{' '}
-                              <span style={{ color: 'var(--gold)' }}>
-                                {s.price.toLocaleString()}₮
-                              </span>{' '}
-                              · {s.available} left
-                            </div>
-                          ))}
+                      <SizesCell listing={l} decantSizes={decantSizes} />
                     </td>
                     <td className="px-4 py-3">
                       <Badge

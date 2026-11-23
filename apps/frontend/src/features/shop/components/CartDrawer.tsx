@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { X, ShoppingBag, Trash2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { usePayment } from '../hooks/usePayment';
@@ -7,6 +8,13 @@ import { isAuthenticated } from '../../../shared/auth/token';
 import { useQueryClient } from '@tanstack/react-query';
 import { QuantityStepper } from '../../../shared/components/QuantityStepper';
 import { priceOf } from '../../../types/listing';
+import type { Delivery } from '../../../types/order';
+import {
+  DeliveryForm,
+  deliveryErrors,
+  loadSavedDelivery,
+  saveDelivery,
+} from './DeliveryForm';
 
 export const CartDrawer = () => {
   const {
@@ -24,20 +32,33 @@ export const CartDrawer = () => {
     usePayment();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  // Checkout is two steps: the cart, then where to deliver it
+  const [step, setStep] = useState<'cart' | 'delivery'>('cart');
+  const [delivery, setDelivery] = useState<Delivery>(loadSavedDelivery);
+  const [errors, setErrors] = useState<Partial<Delivery>>({});
 
-  const handleCheckout = () => {
+  const goToDelivery = () => {
     if (!isAuthenticated()) {
       closeCart();
       navigate('/login');
       return;
     }
+    setStep('delivery');
+  };
+
+  const handlePay = () => {
+    const found = deliveryErrors(delivery);
+    setErrors(found);
+    if (Object.keys(found).length) return;
+    saveDelivery(delivery);
     // The API takes one "listingId:sizeMl" per decant: 2 × 5ml of a is
     // ['a:5', 'a:5'].
     const units = items.flatMap(({ listing, sizeMl, quantity }) =>
       Array.from({ length: quantity }, () => `${listing.id}:${sizeMl}`)
     );
-    createPayment(units, () => {
+    createPayment(units, delivery, () => {
       clearCart();
+      setStep('cart');
       qc.invalidateQueries({ queryKey: ['listings'] });
       qc.invalidateQueries({ queryKey: ['orders'] });
       setTimeout(() => {
@@ -82,7 +103,15 @@ export const CartDrawer = () => {
         </div>
 
         <div className="drawer-body">
-          {items.length === 0 ? (
+          {step === 'delivery' && items.length > 0 ? (
+            <DeliveryForm
+              id="delivery-form"
+              value={delivery}
+              errors={errors}
+              onChange={setDelivery}
+              onSubmit={handlePay}
+            />
+          ) : items.length === 0 ? (
             <div className="drawer-empty">
               <ShoppingBag
                 size={42}
@@ -142,23 +171,52 @@ export const CartDrawer = () => {
               </span>
             </div>
 
-            <button
-              className="drawer-checkout-btn"
-              onClick={handleCheckout}
-              disabled={busy}
-            >
-              CHECKOUT — PAY WITH QPAY
-            </button>
-
-            <button
-              className="drawer-link-btn"
-              onClick={() => {
-                closeCart();
-                navigate('/cart');
-              }}
-            >
-              View order history
-            </button>
+            {/* The keys stop React reusing the CHECKOUT button as the submit
+                button mid-click, which would submit the empty form at once */}
+            {step === 'cart' ? (
+              <>
+                <button
+                  key="checkout"
+                  type="button"
+                  className="drawer-checkout-btn"
+                  onClick={goToDelivery}
+                >
+                  CHECKOUT
+                </button>
+                <button
+                  key="history"
+                  type="button"
+                  className="drawer-link-btn"
+                  onClick={() => {
+                    closeCart();
+                    navigate('/cart');
+                  }}
+                >
+                  View order history
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  key="pay"
+                  type="submit"
+                  form="delivery-form"
+                  className="drawer-checkout-btn"
+                  disabled={busy}
+                >
+                  PAY WITH QPAY
+                </button>
+                <button
+                  key="back"
+                  type="button"
+                  className="drawer-link-btn"
+                  onClick={() => setStep('cart')}
+                  disabled={busy}
+                >
+                  Back to cart
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

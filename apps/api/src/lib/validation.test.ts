@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createPaymentSchema,
+  deliverySchema,
   listingDetailsSchema,
   loginSchema,
   MAX_UNITS_PER_ORDER,
@@ -73,10 +74,24 @@ describe('validateUserUpdate', () => {
 });
 
 describe('createPaymentSchema', () => {
-  it('accepts listingId:sizeMl units', () => {
+  const delivery = {
+    phone: '99112233',
+    address: 'Khan-Uul, 15th khoroo, building 12, apt 34',
+  };
+
+  it('accepts listingId:sizeMl units with delivery details', () => {
     expect(
-      validate(createPaymentSchema, { units: ['a:5', 'a:5', 'b:10'] }).error
+      validate(createPaymentSchema, {
+        units: ['a:5', 'a:5', 'b:10'],
+        delivery,
+      }).error
     ).toBeUndefined();
+  });
+
+  it('requires delivery details', () => {
+    expect(validate(createPaymentSchema, { units: ['a:5'] }).error).toBe(
+      'Delivery details are required'
+    );
   });
 
   it('rejects an empty, malformed or oversized cart', () => {
@@ -94,6 +109,45 @@ describe('createPaymentSchema', () => {
     expect(validate(createPaymentSchema, { units: tooMany }).error).toMatch(
       /at most/
     );
+  });
+});
+
+describe('deliverySchema', () => {
+  const address = 'Khan-Uul, 15th khoroo, building 12, apt 34';
+
+  it('stores a phone number as its 8 digits', () => {
+    for (const phone of ['99112233', '9911 2233', '9911-2233', '+976 99112233'])
+      expect(validate(deliverySchema, { phone, address }).data?.phone).toBe(
+        '99112233'
+      );
+  });
+
+  it('rejects phone numbers that are not 8 digits', () => {
+    for (const phone of ['9911223', '991122334', 'call me', ''])
+      expect(validate(deliverySchema, { phone, address }).error).toBe(
+        'Enter an 8-digit phone number'
+      );
+  });
+
+  it('trims the address and needs enough of it to find the place', () => {
+    expect(
+      validate(deliverySchema, { phone: '99112233', address: `  ${address} ` })
+        .data?.address
+    ).toBe(address);
+    expect(
+      validate(deliverySchema, { phone: '99112233', address: 'Zaisan' }).error
+    ).toBe('Enter the full delivery address');
+  });
+
+  it('keeps a note only when there is one', () => {
+    const base = { phone: '99112233', address };
+    expect(validate(deliverySchema, base).data?.note).toBeUndefined();
+    expect(
+      validate(deliverySchema, { ...base, note: '   ' }).data?.note
+    ).toBeUndefined();
+    expect(
+      validate(deliverySchema, { ...base, note: ' Call before ' }).data?.note
+    ).toBe('Call before');
   });
 });
 

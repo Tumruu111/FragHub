@@ -11,10 +11,20 @@ type Order {
   "Price paid for this decant"
   price: Float!
   buyerConfirmed: Boolean!
+  "The checkout this order came from. Orders from one checkout ship together."
+  paymentId: ID
+  "Where to deliver it. Orders from before delivery was added have none."
+  delivery: Delivery
   createdAt: DateTime!
   updatedAt: DateTime!
   completedAt: DateTime
   cancelledAt: DateTime
+}
+
+type Delivery {
+  phone: String!
+  address: String!
+  note: String
 }
 
 type DayCount {

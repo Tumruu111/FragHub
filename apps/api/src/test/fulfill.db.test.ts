@@ -89,6 +89,8 @@ describe('fulfillPayment on a real database', () => {
       [5, 18000],
       [10, 32000],
     ]);
+    // Linked to the checkout, which holds the delivery details
+    expect(orders.every((o) => o.paymentId === 'p1')).toBe(true);
     expect(await paymentStatus('p1')).toBe('paid');
   });
 

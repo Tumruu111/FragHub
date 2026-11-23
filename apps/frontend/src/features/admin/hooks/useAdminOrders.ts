@@ -13,6 +13,12 @@ const ADMIN_ORDERS_QUERY = gql`
       createdAt
       completedAt
       cancelledAt
+      paymentId
+      delivery {
+        phone
+        address
+        note
+      }
       listing {
         id
         title

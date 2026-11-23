@@ -40,7 +40,10 @@ const sendOrderConfirmation = async (
   units: string[],
   paymentId: string
 ) => {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const [user, payment] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.payment.findUnique({ where: { id: paymentId } }),
+  ]);
   if (!user) return;
 
   const { lines } = await loadCartLines(units);
@@ -59,6 +62,9 @@ const sendOrderConfirmation = async (
         day: 'numeric',
       }),
       total: total.toLocaleString(),
+      phone: payment?.deliveryPhone,
+      address: payment?.deliveryAddress,
+      note: payment?.deliveryNote,
       items: lines.map(({ listing, sizeMl, price, quantity }) => ({
         title: listing.title,
         size: lineSize(sizeMl, quantity),
@@ -77,6 +83,7 @@ const handleFulfillmentFailure = async (
     userId: string;
     listingIds: string[];
     amount: unknown;
+    deliveryPhone: string | null;
   },
   err: unknown
 ) => {
@@ -110,6 +117,7 @@ const handleFulfillmentFailure = async (
       reason: err instanceof Error ? err.message : String(err),
       buyerName: user?.name ?? 'Unknown',
       buyerEmail: user?.email ?? payment.userId,
+      buyerPhone: payment.deliveryPhone,
       items: lines.map(({ listing, sizeMl, quantity }) => ({
         title: listing.title,
         size: lineSize(sizeMl, quantity),
@@ -128,7 +136,7 @@ export const createPayment = async (req: Request, res: Response) => {
   try {
     const body = validate(createPaymentSchema, req.body);
     if (!body.ok) return res.status(400).json({ message: body.error });
-    const { units } = body.data;
+    const { units, delivery } = body.data;
 
     const { lines, missing } = await loadCartLines(units);
     if (missing)
@@ -148,6 +156,9 @@ export const createPayment = async (req: Request, res: Response) => {
         amount,
         listingIds: units,
         status: 'pending',
+        deliveryPhone: delivery.phone,
+        deliveryAddress: delivery.address,
+        deliveryNote: delivery.note,
       },
     });
 

@@ -14,4 +14,14 @@ export interface Order {
   updatedAt: string;
   completedAt: string | null;
   cancelledAt: string | null;
+  // The checkout it came from; orders from one checkout ship together
+  paymentId?: string | null;
+  // Missing on orders from before delivery was added
+  delivery?: Delivery | null;
+}
+
+export interface Delivery {
+  phone: string;
+  address: string;
+  note?: string | null;
 }

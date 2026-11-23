@@ -47,6 +47,11 @@ const OrderRow: FC<{ order: Order }> = ({ order }) => {
             {order.sizeMl}ML DECANT
           </p>
         )}
+        {order.status === 'pending' && order.delivery && (
+          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+            Delivering to {order.delivery.address}
+          </p>
+        )}
         <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>
           {new Date(order.createdAt).toLocaleDateString('en-US', {
             year: 'numeric',

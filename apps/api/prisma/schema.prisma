@@ -65,10 +65,16 @@ model Order {
 
   buyerConfirmed  Boolean      @default(false)
 
+  // The checkout this order came from, which holds the delivery details
+  paymentId       String?
+  payment         Payment?     @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   completedAt     DateTime?
   cancelledAt     DateTime?
+
+  @@index([paymentId])
 }
 
 enum OrderStatus {
@@ -105,6 +111,13 @@ model Payment {
   qpayQrText     String?
   qpayQrImage    String?       @db.Text
   qpayUrls       Json?
+
+  // Where to deliver the decants. Older payments have none.
+  deliveryPhone   String?
+  deliveryAddress String?
+  deliveryNote    String?
+
+  orders         Order[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 

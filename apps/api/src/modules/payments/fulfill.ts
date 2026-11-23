@@ -51,7 +51,13 @@ export const fulfillPayment = async (payment: {
       });
 
       await tx.order.create({
-        data: { userId: payment.userId, listingId, sizeMl, price: size.price },
+        data: {
+          userId: payment.userId,
+          listingId,
+          sizeMl,
+          price: size.price,
+          paymentId: payment.id,
+        },
       });
     }
 

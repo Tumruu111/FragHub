@@ -12,6 +12,9 @@ type Filter = (typeof FILTERS)[number];
 const statusVariant = (s: Order['status']) =>
   s === 'completed' ? 'success' : s === 'cancelled' ? 'danger' : 'warning';
 
+// 99112233 → 9911 2233
+const formatPhone = (p: string) => p.replace(/^(\d{4})(\d{4})$/, '$1 $2');
+
 const errorMessage = (e: unknown) =>
   (e as { response?: { errors?: { message: string }[] } })?.response
     ?.errors?.[0]?.message ?? 'Something went wrong.';
@@ -189,12 +192,46 @@ export const AdminOrdersPage = () => {
                       {order.user.email}
                     </a>
                   </p>
+                  {order.delivery ? (
+                    <div
+                      className="text-xs mt-2 space-y-0.5"
+                      style={{ color: 'var(--text)' }}
+                    >
+                      <p>
+                        <a
+                          href={`tel:+976${order.delivery.phone}`}
+                          style={{ color: 'var(--gold)' }}
+                        >
+                          {formatPhone(order.delivery.phone)}
+                        </a>{' '}
+                        · {order.delivery.address}
+                      </p>
+                      {order.delivery.note && (
+                        <p style={{ color: 'var(--text-muted)' }}>
+                          Note: {order.delivery.note}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p
+                      className="text-xs mt-2"
+                      style={{ color: 'var(--text-dim)' }}
+                    >
+                      No delivery details (ordered before checkout asked)
+                    </p>
+                  )}
                   <p
                     className="text-xs mt-1"
                     style={{ color: 'var(--text-dim)' }}
                   >
                     {new Date(order.createdAt).toLocaleString('en-US')} · #
                     {order.id.slice(0, 8).toUpperCase()}
+                    {order.paymentId && (
+                      <>
+                        {' '}
+                        · checkout #{order.paymentId.slice(0, 8).toUpperCase()}
+                      </>
+                    )}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-2">

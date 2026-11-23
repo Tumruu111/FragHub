@@ -1,4 +1,8 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import { config } from '../../../config';
@@ -18,14 +22,23 @@ export class FileService {
   static upload = async (file: Express.Multer.File): Promise<string> => {
     const key = `${randomUUID()}-${file.originalname}`;
     await getS3Client().send(
-      new PutObjectCommand({ Bucket: config.s3.bucket, Key: key, Body: file.buffer, ContentType: file.mimetype })
+      new PutObjectCommand({
+        Bucket: config.s3.bucket,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      })
     );
     return key;
   };
 
   static getFile = async (key: string): Promise<string> => {
     if (config.s3.publicUpload) {
-      return `https://pub-a3841831c45040bf87348c00c5498163.r2.dev/${config.s3.bucket}/${key}`;
+      if (!config.s3.publicUrl)
+        throw new Error(
+          'AWS_PUBLIC_URL must be set when AWS_FILE_UPLOAD_TYPE is "public"'
+        );
+      return `${config.s3.publicUrl}/${encodeURIComponent(key)}`;
     }
     return getSignedUrl(
       getS3Client(),

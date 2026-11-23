@@ -5,9 +5,6 @@
   "references": [
     {
       "path": "./apps/api"
-    },
-    {
-      "path": "./apps/worker"
     }
   ]
 }

@@ -1,6 +1,7 @@
 # Veritas Parfums — AWS Deployment Guide
 
 Architecture:
+
 - **API** → AWS Lightsail (Ubuntu) + Caddy (auto-SSL) + pm2
 - **Frontend** → S3 + CloudFront
 - **Database** → Neon (already hosted)
@@ -13,6 +14,7 @@ Replace `veritasparfums.com` everywhere with your actual domain.
 ## Part 1 — API on Lightsail
 
 ### 1. Create the instance
+
 1. AWS Console → Lightsail → Create instance
 2. Region: closest to your users (e.g. Singapore `ap-southeast-1` — same as Neon)
 3. Ubuntu 22.04 LTS, $5/mo plan (1 GB RAM)
@@ -20,6 +22,7 @@ Replace `veritasparfums.com` everywhere with your actual domain.
 5. Networking tab → Firewall → add rule: **HTTPS (443)**. Keep SSH (22) and HTTP (80).
 
 ### 2. Install runtime (SSH in via the browser terminal or `ssh ubuntu@<static-ip>`)
+
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
@@ -33,6 +36,7 @@ sudo npm install -g pm2
 ```
 
 ### 3. Get the code and build
+
 ```bash
 cd ~
 git clone https://github.com/<your-username>/FragHub.git
@@ -45,10 +49,13 @@ npx nx build @org/api --configuration=production
 ```
 
 ### 4. Create the production .env
+
 ```bash
 nano ~/FragHub/apps/api/.env
 ```
+
 Paste (with real values — never commit this file):
+
 ```env
 NODE_ENV=production
 PORT=3333
@@ -76,9 +83,11 @@ AWS_ACCESS_KEY_ID=<r2 key>
 AWS_SECRET_ACCESS_KEY=<r2 secret>
 AWS_BUCKET=<bucket>
 AWS_FILE_UPLOAD_TYPE=public
+AWS_PUBLIC_URL=<public bucket address, e.g. https://pub-xxxx.r2.dev/bucket>
 ```
 
 ### 5. Apply migrations & start
+
 ```bash
 cd ~/FragHub/apps/api
 npx prisma migrate deploy    # deploy, NOT dev — applies existing migrations only
@@ -90,12 +99,14 @@ pm2 startup                  # run the command it prints — starts pm2 on reboo
 ```
 
 ### 6. Caddy (SSL reverse proxy)
+
 ```bash
 sudo cp ~/FragHub/deploy/Caddyfile /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
 
 ### 7. DNS
+
 At your DNS provider add: **A record** `api` → `<Lightsail static IP>`.
 Wait a few minutes, then verify: `https://api.veritasparfums.com/api/graphql`
 (Caddy fetches the certificate automatically on first request after DNS resolves.)
@@ -105,22 +116,27 @@ Wait a few minutes, then verify: `https://api.veritasparfums.com/api/graphql`
 ## Part 2 — Frontend on S3 + CloudFront
 
 ### 1. Build with production URLs
+
 On your PC (`.env.production` already points at `api.veritasparfums.com`):
+
 ```powershell
 cd apps/frontend
 npm run build       # output in dist/
 ```
 
 ### 2. S3 bucket
+
 1. Console → S3 → Create bucket, name e.g. `veritasparfums-frontend`, keep "Block all public access" ON (CloudFront will access it, not the public)
 2. Upload the **contents** of `apps/frontend/dist/` (index.html + assets/)
 
 ### 3. Certificate (must be region us-east-1)
+
 1. Console → Certificate Manager, **region N. Virginia (us-east-1)**
 2. Request certificate for `veritasparfums.com` and `www.veritasparfums.com`
 3. DNS validation → add the CNAME records it shows at your DNS provider → wait for "Issued"
 
 ### 4. CloudFront distribution
+
 1. Console → CloudFront → Create distribution
 2. Origin: your S3 bucket → **Origin access: Origin access control (OAC)** → create control setting → after creating, copy the bucket policy it offers into the S3 bucket permissions
 3. Viewer protocol policy: Redirect HTTP to HTTPS
@@ -131,6 +147,7 @@ npm run build       # output in dist/
    - 404 → response page `/index.html`, HTTP code 200
 
 ### 5. DNS
+
 - `veritasparfums.com` → CloudFront domain (`dxxxx.cloudfront.net`). Use an ALIAS/ANAME record, or a CNAME for `www` + redirect for root, depending on your DNS provider (Cloudflare: CNAME works on root via flattening).
 
 ---
@@ -138,6 +155,7 @@ npm run build       # output in dist/
 ## Part 3 — Register the QPay callback
 
 When you get merchant credentials from QPay, tell them / configure:
+
 ```
 https://api.veritasparfums.com/api/payments/callback
 ```
@@ -147,6 +165,7 @@ https://api.veritasparfums.com/api/payments/callback
 ## Updating the site later
 
 **API** (on the server):
+
 ```bash
 cd ~/FragHub && git pull && npm install
 cd apps/api && npx prisma generate && npx prisma migrate deploy && cd ../..
@@ -155,6 +174,7 @@ pm2 restart veritas-api
 ```
 
 **Frontend** (on your PC):
+
 ```powershell
 cd apps/frontend; npm run build
 # upload dist/ to S3 (replace files), then CloudFront → Invalidations → create "/*"

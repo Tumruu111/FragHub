@@ -1,7 +1,23 @@
+const isDev = process.env.NODE_ENV !== 'production';
+
+// Which websites may call the API from a browser. Comma-separated, e.g.
+// "https://veritasparfums.com,https://www.veritasparfums.com". When it is not
+// set, development allows the local Vite site, and production refuses to start
+// instead of letting every website in.
+const allowedOrigins = (): string[] => {
+  const list = (process.env.ALLOWED_ORIGIN ?? '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  if (list.length) return list;
+  if (isDev) return ['http://localhost:5173'];
+  throw new Error('ALLOWED_ORIGIN must be set in production');
+};
+
 export const config = {
   port: process.env.PORT || 3333,
   nodeEnv: process.env.NODE_ENV || 'development',
-  isDev: process.env.NODE_ENV !== 'production',
+  isDev,
 
   db: {
     url: process.env.DATABASE_URL!,
@@ -15,7 +31,7 @@ export const config = {
   },
 
   cors: {
-    origin: process.env.ALLOWED_ORIGIN || '*',
+    origin: allowedOrigins(),
   },
 
   email: {
@@ -43,5 +59,8 @@ export const config = {
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
     bucket: process.env.AWS_BUCKET!,
     publicUpload: process.env.AWS_FILE_UPLOAD_TYPE === 'public',
+    // Public address of the bucket for "public" uploads, e.g.
+    // https://pub-xxxx.r2.dev/my-bucket
+    publicUrl: process.env.AWS_PUBLIC_URL?.replace(/\/+$/, ''),
   },
 } as const;

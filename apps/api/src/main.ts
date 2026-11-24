@@ -13,6 +13,8 @@ import { logger } from './lib/logger';
 import adminRoutes from './modules/admin/routes/adminRoutes';
 import authRoutes from './modules/auth/routes';
 import paymentRoutes from './modules/payments/routes';
+import subscriptionRoutes from './modules/subscriptions/routes';
+import { runSubscriptionCalendar } from './modules/subscriptions/service';
 
 const app = express();
 
@@ -42,6 +44,7 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 purgeExpiredTokens().catch(console.error);
 
@@ -49,6 +52,15 @@ setInterval(
   () => purgeExpiredTokens().catch(console.error),
   6 * 60 * 60 * 1000
 );
+
+// Monthly subscription invoices and boxes. Checked hourly; each step skips
+// what's already done, so restarts and repeats are harmless.
+const subscriptionCalendar = () =>
+  runSubscriptionCalendar().catch((err) =>
+    logger.error('Subscription calendar failed', err)
+  );
+subscriptionCalendar();
+setInterval(subscriptionCalendar, 60 * 60 * 1000);
 
 const server = app.listen(config.port, () => {
   logger.info(`Server running at http://localhost:${config.port}/api`);

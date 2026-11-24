@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { gql } from 'graphql-request';
 import { graphQLClient } from '../../../shared/graphql';
-import type { Listing } from '../../../types/listing';
+import type { Listing, ListingTier, ScentFor } from '../../../types/listing';
 
 const ADMIN_LISTINGS_QUERY = gql`
   query AdminListings {
@@ -13,6 +13,8 @@ const ADMIN_LISTINGS_QUERY = gql`
       status
       bottleMl
       volumeMl
+      tier
+      scentFor
       sizes {
         sizeMl
         price
@@ -51,7 +53,31 @@ export interface NewListing {
   bottleMl: number;
   volumeMl?: number;
   sizes: { sizeMl: number; price: number }[];
+  tier: ListingTier;
+  scentFor: ScentFor;
 }
+
+const UPDATE_BOX_FIELDS_MUTATION = gql`
+  mutation UpdateBoxFields($id: ID!, $input: UpdateListingInput!) {
+    updateListing(id: $id, input: $input) {
+      id
+      tier
+      scentFor
+    }
+  }
+`;
+
+// Sets which box slot a listing fills and who it suits
+export const useUpdateBoxFields = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: {
+      id: string;
+      input: { tier?: ListingTier; scentFor?: ScentFor };
+    }) => graphQLClient.request(UPDATE_BOX_FIELDS_MUTATION, v),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin'] }),
+  });
+};
 
 export const useAdminListings = () => {
   const qc = useQueryClient();

@@ -51,6 +51,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
               [
                 ['/', 'Collection'],
                 ['/cart', 'Orders'],
+                ['/subscription', 'Subscription'],
               ] as [string, string][]
             ).map(([path, label]) => (
               <Link
@@ -122,6 +123,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
               [
                 ['/', 'Collection'],
                 ['/cart', 'Orders'],
+                ['/subscription', 'Subscription'],
               ] as [string, string][]
             ).map(([path, label]) => (
               <Link

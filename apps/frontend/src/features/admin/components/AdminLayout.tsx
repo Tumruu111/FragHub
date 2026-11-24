@@ -8,6 +8,7 @@ const NAV = [
   { label: 'DASHBOARD', path: '/admin/dashboard' },
   { label: 'LISTINGS', path: '/admin/listings' },
   { label: 'ORDERS', path: '/admin/orders' },
+  { label: 'BOXES', path: '/admin/subscriptions' },
 ];
 
 export const AdminLayout: FC<{ children: ReactNode }> = ({ children }) => {

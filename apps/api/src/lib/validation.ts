@@ -73,6 +73,15 @@ export const createPaymentSchema = z.object({
   delivery: deliverySchema,
 });
 
+// Signing up for monthly boxes
+export const subscribeSchema = z.object({
+  plan: z.enum(['base', 'premium'], { error: 'Choose a plan' }),
+  forWhom: z.enum(['him', 'her', 'either'], {
+    error: 'Choose who the boxes are for',
+  }),
+  delivery: deliverySchema,
+});
+
 // The descriptive fields of a listing (ml and prices are checked in decants)
 export const listingDetailsSchema = z.object({
   title: z

@@ -14,10 +14,16 @@ export interface Listing {
   status: 'in_stock' | 'out_of_order';
   bottleMl: number;
   volumeMl: number;
+  // Which subscription box slot it fills, and who it suits
+  tier: ListingTier;
+  scentFor: ScentFor;
   sizes: ListingSize[];
   createdAt: string;
   updatedAt: string;
 }
+
+export type ListingTier = 'arabian' | 'designer' | 'niche';
+export type ScentFor = 'masculine' | 'feminine' | 'unisex';
 
 export interface ListingsResponse {
   data: Listing[];

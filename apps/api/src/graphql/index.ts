@@ -4,6 +4,12 @@ import { enumTypeDefs } from './schema/enum';
 import { listingTypeDefs } from './schema/listing';
 import { userTypeDefs } from './schema/user';
 import { orderTypeDefs } from './schema/order';
+import { subscriptionTypeDefs } from './schema/subscription';
+import {
+  subscriptionMutations,
+  subscriptionQueries,
+  subscriptionTypes,
+} from './resolvers/subscriptions';
 import { queries } from './resolvers/queries/listingQueries';
 import { mutations } from './resolvers/mutations/mutations';
 import { prisma } from '../lib/prisma';
@@ -18,10 +24,12 @@ export const apolloServer = new ApolloServer<GraphQLContext>({
     listingTypeDefs,
     userTypeDefs,
     orderTypeDefs,
+    subscriptionTypeDefs,
   ],
   resolvers: {
-    Query: { ...queries },
-    Mutation: { ...mutations },
+    Query: { ...queries, ...subscriptionQueries },
+    Mutation: { ...mutations, ...subscriptionMutations },
+    ...subscriptionTypes,
     // Prisma batches same-tick findUnique calls (including fluent relation
     // reads like .sizes()) into one query — no N+1
     Listing: {
@@ -42,7 +50,28 @@ export const apolloServer = new ApolloServer<GraphQLContext>({
       user: (parent: { userId: string }) =>
         prisma.user.findUnique({ where: { id: parent.userId } }),
       price: (parent: { price: unknown }) => Number(parent.price),
-      delivery: async (parent: { paymentId: string | null }) => {
+      boxMonth: async (parent: { boxId: string | null }) =>
+        parent.boxId
+          ? (await prisma.box.findUnique({ where: { id: parent.boxId } }))
+              ?.month ?? null
+          : null,
+      delivery: async (parent: {
+        paymentId: string | null;
+        boxId: string | null;
+      }) => {
+        // A box decant goes to the subscription's address
+        if (parent.boxId) {
+          const s = await prisma.box
+            .findUnique({ where: { id: parent.boxId } })
+            .subscription();
+          return s
+            ? {
+                phone: s.deliveryPhone,
+                address: s.deliveryAddress,
+                note: s.deliveryNote,
+              }
+            : null;
+        }
         if (!parent.paymentId) return null;
         const p = await prisma.payment.findUnique({
           where: { id: parent.paymentId },

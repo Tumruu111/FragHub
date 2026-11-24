@@ -14,6 +14,7 @@ const ADMIN_ORDERS_QUERY = gql`
       completedAt
       cancelledAt
       paymentId
+      boxMonth
       delivery {
         phone
         address

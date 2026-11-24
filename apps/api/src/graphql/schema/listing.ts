@@ -16,6 +16,10 @@ type Listing {
   bottleMl: Int!
   "Ml left in the bottle, shared by every size"
   volumeMl: Int!
+  "Which subscription box slot it can fill"
+  tier: ListingTier!
+  "Who it suits, for matching boxes to subscribers"
+  scentFor: ScentFor!
   sizes: [ListingSize!]!
   orders: [Order!]!
   createdAt: DateTime!
@@ -48,6 +52,8 @@ input CreateListingInput {
   "Defaults to the full bottle"
   volumeMl: Int
   sizes: [SizePriceInput!]!
+  tier: ListingTier
+  scentFor: ScentFor
 }
 
 input UpdateListingInput {
@@ -58,6 +64,8 @@ input UpdateListingInput {
   volumeMl: Int
   status: ListingStatus
   sizes: [SizePriceInput!]
+  tier: ListingTier
+  scentFor: ScentFor
 }
 
 extend type Mutation {

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Your monthly box — VERITAS PARFUMS</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: #080808;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        color: #ede9e2;
+      }
+      .wrap {
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 48px 24px;
+      }
+      .logo {
+        text-align: center;
+        font-size: 22px;
+        letter-spacing: 0.4em;
+        color: #c9a84c;
+        margin-bottom: 8px;
+      }
+      .gold-line {
+        width: 40px;
+        height: 1px;
+        background: #c9a84c;
+        margin: 0 auto 32px;
+      }
+      .heading {
+        text-align: center;
+        font-size: 11px;
+        letter-spacing: 0.35em;
+        color: #c9a84c;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+      }
+      h1 {
+        text-align: center;
+        font-size: 28px;
+        font-weight: 300;
+        margin-bottom: 20px;
+      }
+      p {
+        font-size: 14px;
+        line-height: 1.7;
+        color: #a39e96;
+        text-align: center;
+      }
+      .amount {
+        font-size: 32px;
+        color: #c9a84c;
+        text-align: center;
+        margin: 28px 0 8px;
+      }
+      .plan {
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        color: #6b6760;
+        text-align: center;
+      }
+      .btn-wrap {
+        text-align: center;
+        margin: 32px 0;
+      }
+      .btn {
+        display: inline-block;
+        padding: 14px 36px;
+        background: #c9a84c;
+        color: #0a0a0a !important;
+        text-decoration: none;
+        font-size: 12px;
+        letter-spacing: 0.3em;
+      }
+      .note {
+        font-size: 12px;
+        color: #6b6760;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="logo">VERITAS PARFUMS</div>
+      <div class="gold-line"></div>
+
+      <p class="heading">Your monthly box</p>
+      <h1>{{month}}, {{name}}</h1>
+      <p>
+        Two new 5ml decants are waiting for you this month.<br />
+        Pay by the {{lastDay}}th and we'll send your box from the {{shipDay}}th.
+      </p>
+
+      <p class="amount">{{amount}}₮</p>
+      <p class="plan">{{plan}} PLAN</p>
+
+      <div class="btn-wrap">
+        <a class="btn" href="{{payUrl}}">PAY WITH QPAY</a>
+      </div>
+
+      <p class="note">
+        Skipping this month? Do nothing: no box is sent and nothing is
+        charged.<br />
+        You can cancel any time from your subscription page.
+      </p>
+    </div>
+  </body>
+</html>

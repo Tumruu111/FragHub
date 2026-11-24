@@ -30,6 +30,12 @@ export const config = {
     bcryptRounds: 10,
   },
 
+  // Where the shop is, for links in emails
+  siteUrl: (process.env.SITE_URL || 'http://localhost:5173').replace(
+    /\/+$/,
+    ''
+  ),
+
   cors: {
     origin: allowedOrigins(),
   },

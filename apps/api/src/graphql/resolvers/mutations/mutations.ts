@@ -38,6 +38,8 @@ interface CreateListingInput {
   bottleMl: number;
   volumeMl?: number | null;
   sizes: SizePrice[];
+  tier?: 'arabian' | 'designer' | 'niche' | null;
+  scentFor?: 'masculine' | 'feminine' | 'unisex' | null;
 }
 
 interface UpdateListingInput {
@@ -48,6 +50,8 @@ interface UpdateListingInput {
   volumeMl?: number | null;
   status?: 'in_stock' | 'out_of_order';
   sizes?: SizePrice[];
+  tier?: 'arabian' | 'designer' | 'niche' | null;
+  scentFor?: 'masculine' | 'feminine' | 'unisex' | null;
 }
 
 // Sign-up is REST only (POST /api/auth/register), which has the strict
@@ -143,7 +147,7 @@ export const mutations = {
     ctx: GraphQLContext
   ) => {
     requireAdmin(ctx);
-    const { sizes, volumeMl, bottleMl, ...rest } = args.input;
+    const { sizes, volumeMl, bottleMl, tier, scentFor, ...rest } = args.input;
     const details = validate(listingDetailsSchema, rest);
     const ml = volumeMl ?? bottleMl;
     const error =
@@ -156,6 +160,8 @@ export const mutations = {
         ...details.data,
         bottleMl,
         volumeMl: ml,
+        tier: tier ?? undefined,
+        scentFor: scentFor ?? undefined,
         status: statusForVolume(ml),
         sizes: { create: sizes },
       },
@@ -171,7 +177,8 @@ export const mutations = {
     const listing = await prisma.listing.findUnique({ where: { id: args.id } });
     if (!listing) throw new GraphQLError('Listing not found');
 
-    const { sizes, title, picture, vibe, ...input } = args.input;
+    const { sizes, title, picture, vibe, tier, scentFor, ...input } =
+      args.input;
     // Only the fields that were sent; GraphQL passes omitted ones as null
     const details = validate(
       listingDetailsSchema.partial(),
@@ -194,6 +201,8 @@ export const mutations = {
         ...details.data,
         bottleMl,
         volumeMl,
+        tier: tier ?? undefined,
+        scentFor: scentFor ?? undefined,
         // Keep the sold-out flag in step with the ml left unless set explicitly
         status:
           input.status ??

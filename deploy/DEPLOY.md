@@ -63,6 +63,7 @@ DATABASE_URL="<your NEW Neon connection string>"
 JWT_SECRET="<the value from your local .env>"
 ADMIN_SECRET_KEY="<the value from your local .env>"
 ALLOWED_ORIGIN=https://veritasparfums.com
+SITE_URL=https://veritasparfums.com
 
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465

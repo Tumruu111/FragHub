@@ -5,6 +5,7 @@ import type { AdminOrder } from '../hooks/useAdminOrders';
 import { Badge } from '../../../shared/components/Badge';
 import { Button } from '../../../shared/components/Button';
 import type { Order } from '../../../types/order';
+import { monthName } from '../../../types/subscription';
 
 const FILTERS = ['pending', 'completed', 'cancelled', 'all'] as const;
 type Filter = (typeof FILTERS)[number];
@@ -226,6 +227,9 @@ export const AdminOrdersPage = () => {
                   >
                     {new Date(order.createdAt).toLocaleString('en-US')} · #
                     {order.id.slice(0, 8).toUpperCase()}
+                    {order.boxMonth && (
+                      <> · {monthName(order.boxMonth)} subscription box</>
+                    )}
                     {order.paymentId && (
                       <>
                         {' '}

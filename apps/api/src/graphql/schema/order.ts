@@ -15,6 +15,8 @@ type Order {
   paymentId: ID
   "Where to deliver it. Orders from before delivery was added have none."
   delivery: Delivery
+  "Set when the order is a decant from a subscription box, e.g. 2026-12"
+  boxMonth: String
   createdAt: DateTime!
   updatedAt: DateTime!
   completedAt: DateTime

@@ -9,6 +9,7 @@ import { cartTotal, findShortage, groupUnits } from '../../lib/cart';
 import { createPaymentSchema, validate } from '../../lib/validation';
 import { PaymentStatus } from '../../../generated/prisma/enums';
 import { fulfillPayment, UNSETTLED } from './fulfill';
+import { settleInvoiceFromCallback } from '../subscriptions/controllers';
 
 // A payment stores one unit per decant bought, as "listingId:sizeMl" (see
 // lib/decants), in its listingIds column. This groups them into lines of
@@ -262,7 +263,12 @@ export const paymentCallback = async (req: Request, res: Response) => {
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
     });
-    if (!payment || payment.status === 'paid' || payment.status === 'failed')
+    // Not a checkout: it may be a subscription's monthly invoice
+    if (!payment) {
+      await settleInvoiceFromCallback(paymentId);
+      return res.json({ ok: true });
+    }
+    if (payment.status === 'paid' || payment.status === 'failed')
       return res.json({ ok: true });
 
     const paid = await checkInvoicePaid(payment.qpayInvoiceId!);

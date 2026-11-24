@@ -3,6 +3,13 @@ import { useAdminListings, useDecantSizes } from '../hooks/useAdminListings';
 import { AdminLayout } from '../components/AdminLayout';
 import { VolumeCell } from '../components/VolumeCell';
 import { SizesCell } from '../components/SizesCell';
+import {
+  BoxFieldsCell,
+  SCENT_FOR,
+  TIERS,
+  selectStyle,
+} from '../components/BoxFieldsCell';
+import type { ListingTier, ScentFor } from '../../../types/listing';
 import { Badge } from '../../../shared/components/Badge';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
@@ -13,6 +20,8 @@ const INITIAL_FORM = {
   vibe: '',
   bottleMl: '',
   volumeMl: '',
+  tier: 'designer' as ListingTier,
+  scentFor: 'unisex' as ScentFor,
 };
 
 export const AdminListingsPage = () => {
@@ -32,7 +41,7 @@ export const AdminListingsPage = () => {
 
   const set =
     (k: keyof typeof INITIAL_FORM) =>
-    (e: React.ChangeEvent<HTMLInputElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const bottleMl = parseInt(form.bottleMl) || 0;
@@ -66,6 +75,8 @@ export const AdminListingsPage = () => {
           .filter(Boolean),
         bottleMl,
         volumeMl,
+        tier: form.tier,
+        scentFor: form.scentFor,
         sizes: decantSizes.map((sizeMl) => ({
           sizeMl,
           price: parseFloat(prices[sizeMl]),
@@ -120,15 +131,17 @@ export const AdminListingsPage = () => {
             <table className="min-w-full text-sm">
               <thead>
                 <tr style={{ background: 'var(--bg-elevated)' }}>
-                  {['TITLE', 'ML LEFT', 'SIZES', 'STATUS', ''].map((h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left text-xs tracking-[0.2em]"
-                      style={{ color: 'var(--text-dim)' }}
-                    >
-                      {h}
-                    </th>
-                  ))}
+                  {['TITLE', 'ML LEFT', 'SIZES', 'BOX', 'STATUS', ''].map(
+                    (h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-left text-xs tracking-[0.2em]"
+                        style={{ color: 'var(--text-dim)' }}
+                      >
+                        {h}
+                      </th>
+                    )
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -156,6 +169,9 @@ export const AdminListingsPage = () => {
                       <SizesCell listing={l} decantSizes={decantSizes} />
                     </td>
                     <td className="px-4 py-3">
+                      <BoxFieldsCell listing={l} />
+                    </td>
+                    <td className="px-4 py-3">
                       <Badge
                         label={
                           l.status === 'in_stock' ? 'IN STOCK' : 'SOLD OUT'
@@ -177,7 +193,7 @@ export const AdminListingsPage = () => {
                 {!listings?.length && (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className="px-4 py-12 text-center text-xs tracking-widest"
                       style={{ color: 'var(--text-dim)' }}
                     >
@@ -281,6 +297,37 @@ export const AdminListingsPage = () => {
               value={form.picture}
               onChange={set('picture')}
             />
+            <div className="grid grid-cols-2 gap-4">
+              {(
+                [
+                  ['tier', 'BOX TIER', TIERS],
+                  ['scentFor', 'SUITS', SCENT_FOR],
+                ] as const
+              ).map(([field, label, options]) => (
+                <div key={field} className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor={`new-${field}`}
+                    className="text-xs tracking-[0.2em]"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    {label}
+                  </label>
+                  <select
+                    id={`new-${field}`}
+                    className="w-full px-4 py-3 text-sm"
+                    style={selectStyle}
+                    value={form[field]}
+                    onChange={set(field)}
+                  >
+                    {options.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
             <Input
               label="NOTES (comma separated)"
               placeholder="woody, amber, spicy"

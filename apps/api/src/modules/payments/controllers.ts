@@ -5,17 +5,10 @@ import { createInvoice, checkInvoicePaid, cancelInvoice } from '../../lib/qpay';
 import { sendEmail } from '../../lib/email';
 import { getUserFromRequest } from '../../lib/auth';
 import { config } from '../../config';
-import { parseUnit, SMALLEST_SIZE_ML } from '../../lib/decants';
 import { cartTotal, findShortage, groupUnits } from '../../lib/cart';
 import { createPaymentSchema, validate } from '../../lib/validation';
 import { PaymentStatus } from '../../../generated/prisma/enums';
-
-// A payment QPay may still report as paid. 'cancelled' is included because the
-// buyer can finish paying in their bank app after closing our QR modal.
-const UNSETTLED: PaymentStatus[] = [
-  PaymentStatus.pending,
-  PaymentStatus.cancelled,
-];
+import { fulfillPayment, UNSETTLED } from './fulfill';
 
 // A payment stores one unit per decant bought, as "listingId:sizeMl" (see
 // lib/decants), in its listingIds column. This groups them into lines of
@@ -47,7 +40,10 @@ const sendOrderConfirmation = async (
   units: string[],
   paymentId: string
 ) => {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const [user, payment] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.payment.findUnique({ where: { id: paymentId } }),
+  ]);
   if (!user) return;
 
   const { lines } = await loadCartLines(units);
@@ -66,6 +62,9 @@ const sendOrderConfirmation = async (
         day: 'numeric',
       }),
       total: total.toLocaleString(),
+      phone: payment?.deliveryPhone,
+      address: payment?.deliveryAddress,
+      note: payment?.deliveryNote,
       items: lines.map(({ listing, sizeMl, price, quantity }) => ({
         title: listing.title,
         size: lineSize(sizeMl, quantity),
@@ -84,6 +83,7 @@ const handleFulfillmentFailure = async (
     userId: string;
     listingIds: string[];
     amount: unknown;
+    deliveryPhone: string | null;
   },
   err: unknown
 ) => {
@@ -117,6 +117,7 @@ const handleFulfillmentFailure = async (
       reason: err instanceof Error ? err.message : String(err),
       buyerName: user?.name ?? 'Unknown',
       buyerEmail: user?.email ?? payment.userId,
+      buyerPhone: payment.deliveryPhone,
       items: lines.map(({ listing, sizeMl, quantity }) => ({
         title: listing.title,
         size: lineSize(sizeMl, quantity),
@@ -124,55 +125,6 @@ const handleFulfillmentFailure = async (
     },
   });
 };
-
-// Fulfill a confirmed payment: claim it, take each decant's ml out of its
-// bottle and create orders atomically. Returns false if another request
-// already settled this payment — the frontend poll and the QPay callback can
-// arrive at the same time. Throws if a bottle doesn't have enough ml left; the
-// whole transaction rolls back.
-const fulfillPayment = async (payment: {
-  id: string;
-  userId: string;
-  listingIds: string[];
-}): Promise<boolean> =>
-  prisma.$transaction(async (tx) => {
-    // Claiming locks the payment row. A concurrent request blocks here until
-    // this transaction ends, then finds the payment settled and claims nothing.
-    const claimed = await tx.payment.updateMany({
-      where: { id: payment.id, status: { in: UNSETTLED } },
-      data: { status: PaymentStatus.paid },
-    });
-    if (claimed.count === 0) return false;
-
-    for (const unit of payment.listingIds) {
-      const parsed = parseUnit(unit);
-      if (!parsed) throw new Error(`Unrecognised item "${unit}"`);
-      const { listingId, sizeMl } = parsed;
-
-      const size = await tx.listingSize.findUnique({
-        where: { listingId_sizeMl: { listingId, sizeMl } },
-      });
-      if (!size) throw new Error(`${sizeMl}ml of ${listingId} is not sold`);
-
-      const updated = await tx.listing.updateMany({
-        where: { id: listingId, status: 'in_stock', volumeMl: { gte: sizeMl } },
-        data: { volumeMl: { decrement: sizeMl } },
-      });
-      if (updated.count === 0)
-        throw new Error(`${listingId} has less than ${sizeMl}ml left`);
-
-      await tx.listing.updateMany({
-        where: { id: listingId, volumeMl: { lt: SMALLEST_SIZE_ML } },
-        data: { status: 'out_of_order' },
-      });
-
-      await tx.order.create({
-        data: { userId: payment.userId, listingId, sizeMl, price: size.price },
-      });
-    }
-
-    return true;
-  });
 
 // POST /api/payments/create
 // Body: { units: string[] } — one "listingId:sizeMl" per decant, repeated for
@@ -184,7 +136,7 @@ export const createPayment = async (req: Request, res: Response) => {
   try {
     const body = validate(createPaymentSchema, req.body);
     if (!body.ok) return res.status(400).json({ message: body.error });
-    const { units } = body.data;
+    const { units, delivery } = body.data;
 
     const { lines, missing } = await loadCartLines(units);
     if (missing)
@@ -204,6 +156,9 @@ export const createPayment = async (req: Request, res: Response) => {
         amount,
         listingIds: units,
         status: 'pending',
+        deliveryPhone: delivery.phone,
+        deliveryAddress: delivery.address,
+        deliveryNote: delivery.note,
       },
     });
 

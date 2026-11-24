@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../../../shared/api';
+import type { Delivery } from '../../../types/order';
 
 export type PaymentStatus = 'idle' | 'creating' | 'pending' | 'paid' | 'error';
 
@@ -54,11 +55,15 @@ export const usePayment = () => {
   };
 
   // units: one "listingId:sizeMl" per decant
-  const createPayment = async (units: string[], onPaid: () => void) => {
+  const createPayment = async (
+    units: string[],
+    delivery: Delivery,
+    onPaid: () => void
+  ) => {
     setStatus('creating');
     setError('');
     try {
-      const res = await api.post('/payments/create', { units });
+      const res = await api.post('/payments/create', { units, delivery });
       setPayment(res.data);
       setStatus('pending');
       startPolling(res.data.paymentId, onPaid);

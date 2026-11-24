@@ -14,6 +14,11 @@ const MY_ORDERS_QUERY = gql`
       createdAt
       cancelledAt
       completedAt
+      delivery {
+        phone
+        address
+        note
+      }
       buyerConfirmed
       listing {
         id

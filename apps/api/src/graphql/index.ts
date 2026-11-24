@@ -42,6 +42,19 @@ export const apolloServer = new ApolloServer<GraphQLContext>({
       user: (parent: { userId: string }) =>
         prisma.user.findUnique({ where: { id: parent.userId } }),
       price: (parent: { price: unknown }) => Number(parent.price),
+      delivery: async (parent: { paymentId: string | null }) => {
+        if (!parent.paymentId) return null;
+        const p = await prisma.payment.findUnique({
+          where: { id: parent.paymentId },
+        });
+        return p?.deliveryPhone && p.deliveryAddress
+          ? {
+              phone: p.deliveryPhone,
+              address: p.deliveryAddress,
+              note: p.deliveryNote,
+            }
+          : null;
+      },
     },
   },
   // Disable introspection in production — prevents schema mapping by attackers

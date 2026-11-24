@@ -175,7 +175,7 @@ const SignUp = ({ pay }: { pay: Pay }) => {
           WHO IS IT FOR?
         </p>
         <div className="flex gap-3" role="radiogroup">
-          {(['him', 'her', 'either'] as SubscriberFor[]).map((f) => (
+          {(['him', 'her'] as SubscriberFor[]).map((f) => (
             <Choice
               key={f}
               selected={forWhom === f}

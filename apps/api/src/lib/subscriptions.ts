@@ -4,7 +4,7 @@
 export type Tier = 'arabian' | 'designer' | 'niche';
 export type ScentFor = 'masculine' | 'feminine' | 'unisex';
 export type Plan = 'base' | 'premium';
-export type SubscriberFor = 'him' | 'her' | 'either';
+export type SubscriberFor = 'him' | 'her';
 
 // Every box decant is this size
 export const BOX_SIZE_ML = 5;
@@ -59,7 +59,6 @@ export const canPayInvoice = (invoiceMonth: string, now: Date): boolean => {
 };
 
 export const fitsSubscriber = (forWhom: SubscriberFor, scentFor: ScentFor) =>
-  forWhom === 'either' ||
   scentFor === 'unisex' ||
   (forWhom === 'him' ? scentFor === 'masculine' : scentFor === 'feminine');
 

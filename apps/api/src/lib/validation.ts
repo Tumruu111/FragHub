@@ -76,7 +76,7 @@ export const createPaymentSchema = z.object({
 // Signing up for monthly boxes
 export const subscribeSchema = z.object({
   plan: z.enum(['base', 'premium'], { error: 'Choose a plan' }),
-  forWhom: z.enum(['him', 'her', 'either'], {
+  forWhom: z.enum(['him', 'her'], {
     error: 'Choose who the boxes are for',
   }),
   delivery: deliverySchema,

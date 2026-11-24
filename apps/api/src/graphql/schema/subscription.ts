@@ -19,7 +19,6 @@ enum SubscriptionPlan {
 enum SubscriberFor {
   him
   her
-  either
 }
 
 enum SubscriptionStatus {

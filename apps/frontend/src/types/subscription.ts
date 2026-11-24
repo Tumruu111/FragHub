@@ -2,7 +2,7 @@ import type { Delivery } from './order';
 import type { Listing, ListingTier } from './listing';
 
 export type SubscriptionPlan = 'base' | 'premium';
-export type SubscriberFor = 'him' | 'her' | 'either';
+export type SubscriberFor = 'him' | 'her';
 
 export interface SubscriptionPlanInfo {
   plan: SubscriptionPlan;
@@ -60,7 +60,6 @@ export const TIER_NAMES: Record<ListingTier, string> = {
 export const FOR_NAMES: Record<SubscriberFor, string> = {
   him: 'For him',
   her: 'For her',
-  either: 'For either',
 };
 
 // "2026-12" → "December 2026"

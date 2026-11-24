@@ -45,7 +45,7 @@ describe('fitsSubscriber', () => {
     expect(fitsSubscriber('him', 'feminine')).toBe(false);
     expect(fitsSubscriber('her', 'feminine')).toBe(true);
     expect(fitsSubscriber('her', 'unisex')).toBe(true);
-    expect(fitsSubscriber('either', 'feminine')).toBe(true);
+    expect(fitsSubscriber('him', 'unisex')).toBe(true);
   });
 });
 
@@ -105,7 +105,7 @@ describe('pickBoxes', () => {
       ['s1', 's2'].map((id) => ({
         ...base,
         subscriptionId: id,
-        forWhom: 'either' as const,
+        forWhom: 'him' as const,
       })),
       lowStock
     );
@@ -120,7 +120,7 @@ describe('pickBoxes', () => {
     ];
     const pick = (roll: number) =>
       pickBoxes(
-        [{ ...base, subscriptionId: 's', forWhom: 'either' }],
+        [{ ...base, subscriptionId: 's', forWhom: 'her' }],
         two,
         () => roll
       )[0].items[1].listingId;

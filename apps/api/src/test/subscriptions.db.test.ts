@@ -61,11 +61,7 @@ const listing = (
   });
 
 // An active subscriber, with this month paid unless said otherwise
-const subscriber = async (
-  id: string,
-  forWhom: 'him' | 'her' | 'either',
-  paid = true
-) => {
+const subscriber = async (id: string, forWhom: 'him' | 'her', paid = true) => {
   await prisma.user.create({
     data: { id, name: id, email: `${id}@example.com`, password: 'x' },
   });
@@ -151,9 +147,9 @@ describe('subscription months on a real database', () => {
     // 7ml is enough for one 5ml decant, not two
     await listing('sauvage', 'designer', 'unisex', 7);
     await listing('khamrah', 'arabian', 'unisex');
-    const first = await subscriber('bat', 'either');
+    const first = await subscriber('bat', 'him');
     await service.proposeBoxes(MONTH);
-    const late = await subscriber('saraa', 'either');
+    const late = await subscriber('saraa', 'her');
     await service.proposeBoxes(MONTH);
 
     expect((await boxOf(first.id)).items.map((i) => i.listingId)).toContain(

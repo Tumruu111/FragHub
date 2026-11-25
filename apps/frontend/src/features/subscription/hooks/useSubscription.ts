@@ -55,6 +55,8 @@ const MY_SUBSCRIPTION_QUERY = gql`
             id
             title
             picture
+            bottleMl
+            bottlePrice
           }
         }
       }

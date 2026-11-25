@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from '../features/shop/pages/HomePage';
 import { ProductPage } from '../features/shop/pages/ProductPage';
-import { CartPage } from '../features/shop/pages/CartPage';
+import { OrdersPage } from '../features/shop/pages/OrdersPage';
 import { LoginPage } from '../features/auth/LoginPage';
 import { RegisterPage } from '../features/auth/RegisterPage';
 import { SubscriptionPage } from '../features/subscription/pages/SubscriptionPage';
@@ -32,6 +32,12 @@ const AdminOrdersPage = lazy(() =>
   }))
 );
 
+const AdminPreordersPage = lazy(() =>
+  import('../features/admin/pages/AdminPreordersPage').then((m) => ({
+    default: m.AdminPreordersPage,
+  }))
+);
+
 const AdminSubscriptionsPage = lazy(() =>
   import('../features/admin/pages/AdminSubscriptionsPage').then((m) => ({
     default: m.AdminSubscriptionsPage,
@@ -48,7 +54,8 @@ export default function AppRouter() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/product/:id" element={<ProductPage />} />
-        <Route path="/cart" element={<CartPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/cart" element={<Navigate to="/orders" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/subscription" element={<SubscriptionPage />} />
@@ -59,6 +66,10 @@ export default function AppRouter() {
         />
         <Route path="/admin/listings" element={admin(<AdminListingsPage />)} />
         <Route path="/admin/orders" element={admin(<AdminOrdersPage />)} />
+        <Route
+          path="/admin/preorders"
+          element={admin(<AdminPreordersPage />)}
+        />
         <Route
           path="/admin/subscriptions"
           element={admin(<AdminSubscriptionsPage />)}

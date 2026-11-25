@@ -5,18 +5,15 @@ import { useCart } from '../hooks/useCart';
 import { Layout } from '../../../shared/components/Layout';
 import { Button } from '../../../shared/components/Button';
 import { QuantityStepper } from '../../../shared/components/QuantityStepper';
-import { isSoldOut } from '../../../types/listing';
+import { splitPayment } from '../../../types/listing';
 
 export const ProductPage = () => {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: listing, isLoading, isError } = useListing(id);
-  const { items, addItem, openCart, mlLeft } = useCart();
-  const [chosenSize, setChosenSize] = useState<number | null>(null);
+  const { items, addItem, roomLeft } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const inCartCount = items
-    .filter((i) => i.listing.id === id)
-    .reduce((sum, i) => sum + i.quantity, 0);
+  const inCartCount = items.find((i) => i.listing.id === id)?.quantity ?? 0;
 
   if (isLoading) {
     return (
@@ -61,16 +58,10 @@ export const ProductPage = () => {
     );
   }
 
-  const outOfStock = isSoldOut(listing);
-  // Every size draws from the same bottle, net of what's already in the cart
-  const left = Math.max(0, mlLeft(listing));
-  const canAdd = (sizeMl: number) => Math.floor(left / sizeMl);
-  const fitting = listing.sizes.filter((s) => canAdd(s.sizeMl) > 0);
-  const size =
-    fitting.find((s) => s.sizeMl === chosenSize) ?? fitting[0] ?? null;
-  const maxQty = size ? canAdd(size.sizeMl) : 0;
-  const selected = Math.min(quantity, Math.max(maxQty, 1));
-  const shownPrice = (size ?? listing.sizes[0])?.price ?? 0;
+  const price = listing.bottlePrice;
+  const { deposit } = splitPayment(price ?? 0);
+  // One pre-order holds a limited number of bottles
+  const selected = Math.min(quantity, Math.max(roomLeft, 1));
 
   return (
     <Layout>
@@ -88,19 +79,6 @@ export const ProductPage = () => {
             className="w-full h-full object-cover"
             style={{ aspectRatio: '3/4' }}
           />
-          {outOfStock && (
-            <div
-              className="absolute inset-0 flex items-center justify-center"
-              style={{ background: 'rgba(0,0,0,0.7)' }}
-            >
-              <span
-                className="text-xs tracking-[0.4em]"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                SOLD OUT
-              </span>
-            </div>
-          )}
         </div>
 
         <div className="fade-up-delay-1 space-y-8 flex flex-col justify-center">
@@ -129,7 +107,7 @@ export const ProductPage = () => {
               className="mt-2 text-xs tracking-[0.4em]"
               style={{ color: 'var(--text-muted)' }}
             >
-              DECANTS FROM A {listing.bottleMl}ML BOTTLE
+              {listing.bottleMl}ML · FULL BOTTLE
             </p>
           </div>
 
@@ -146,53 +124,13 @@ export const ProductPage = () => {
               className="font-display text-4xl"
               style={{ color: 'var(--gold)' }}
             >
-              {shownPrice.toLocaleString()}₮
+              {(price ?? 0).toLocaleString()}₮
+            </p>
+            <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+              Pay {deposit.toLocaleString()}₮ (50%) now and the rest when it
+              arrives in UB.
             </p>
           </div>
-
-          {listing.sizes.length > 0 && (
-            <div>
-              <p
-                className="text-xs tracking-[0.3em] mb-3"
-                style={{ color: 'var(--text-dim)' }}
-              >
-                SIZE
-              </p>
-              <div className="flex flex-wrap gap-2" role="radiogroup">
-                {listing.sizes.map((s) => {
-                  const isSelected = s.sizeMl === size?.sizeMl;
-                  const disabled = canAdd(s.sizeMl) < 1;
-                  return (
-                    <button
-                      key={s.sizeMl}
-                      type="button"
-                      role="radio"
-                      aria-checked={isSelected}
-                      disabled={disabled}
-                      onClick={() => setChosenSize(s.sizeMl)}
-                      className="px-4 py-2 text-xs tracking-widest"
-                      style={{
-                        border: `1px solid ${
-                          isSelected ? 'var(--gold)' : 'var(--border)'
-                        }`,
-                        background: isSelected
-                          ? 'rgba(201,168,76,0.08)'
-                          : 'transparent',
-                        color: disabled
-                          ? 'var(--border)'
-                          : isSelected
-                          ? 'var(--gold)'
-                          : 'var(--text-muted)',
-                        cursor: disabled ? 'default' : 'pointer',
-                      }}
-                    >
-                      {s.sizeMl}ML · {s.price.toLocaleString()}₮
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           {listing.vibe?.length > 0 && (
             <div>
@@ -220,36 +158,18 @@ export const ProductPage = () => {
             </div>
           )}
 
-          <div>
-            <span
-              className="text-xs tracking-widest"
-              style={{ color: outOfStock ? '#f87171' : '#6ee7b7' }}
-            >
-              {outOfStock
-                ? '✕ OUT OF STOCK'
-                : size
-                ? `✓ ${maxQty} × ${size.sizeMl}ML AVAILABLE`
-                : '✓ IN STOCK'}
-            </span>
-          </div>
+          <p
+            className="text-xs tracking-widest"
+            style={{ color: 'var(--text-dim)' }}
+          >
+            IMPORTED TO ORDER · USUALLY 1–2 WEEKS
+          </p>
 
           {/* Buying goes through the cart → QPay checkout, never directly. */}
-          {outOfStock ? (
+          {price == null ? (
             <Button disabled className="w-full" size="lg">
-              UNAVAILABLE
+              NOT AVAILABLE TO ORDER
             </Button>
-          ) : !size ? (
-            <div className="space-y-3">
-              <p
-                className="text-xs tracking-widest"
-                style={{ color: 'var(--text-dim)' }}
-              >
-                ALL THAT&apos;S LEFT OF THIS BOTTLE IS IN YOUR CART
-              </p>
-              <Button onClick={openCart} className="w-full" size="lg">
-                VIEW CART
-              </Button>
-            </div>
           ) : (
             <div className="space-y-3">
               {inCartCount > 0 && (
@@ -257,24 +177,25 @@ export const ProductPage = () => {
                   className="text-xs tracking-widest"
                   style={{ color: 'var(--text-dim)' }}
                 >
-                  {inCartCount} OF THIS PERFUME ALREADY IN YOUR CART
+                  {inCartCount} OF THIS BOTTLE ALREADY IN YOUR CART
                 </p>
               )}
               <div className="flex gap-3">
                 <QuantityStepper
                   value={selected}
-                  max={maxQty}
+                  max={Math.max(roomLeft, 1)}
                   onChange={setQuantity}
                 />
                 <Button
                   onClick={() => {
-                    addItem(listing, size.sizeMl, selected);
+                    addItem(listing, selected);
                     setQuantity(1);
                   }}
+                  disabled={roomLeft < 1}
                   className="flex-1"
                   size="lg"
                 >
-                  ADD TO CART
+                  PRE-ORDER
                 </Button>
               </div>
             </div>

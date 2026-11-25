@@ -12,29 +12,20 @@ export interface PaymentData {
   urls: { name: string; description: string; logo: string; link: string }[];
 }
 
-// Where to ask whether a payment has gone through, and how to call it off
-interface PaymentEndpoints {
-  check: (id: string) => string;
-  // Leave out when closing the QR shouldn't cancel anything
-  cancel?: (id: string) => string;
-}
+// Where to ask whether a payment has gone through. Closing the QR never
+// cancels anything: the customer can pay later from their orders page, or in
+// their bank app after closing it.
+type CheckUrl = (id: string) => string;
 
-const CHECKOUT: PaymentEndpoints = {
-  check: (id) => `/payments/${id}/check`,
-  cancel: (id) => `/payments/${id}`,
-};
-
-// A month's invoice stays payable after the QR is closed, until the 20th
-const SUBSCRIPTION: PaymentEndpoints = {
-  check: (id) => `/subscriptions/invoices/${id}/check`,
-};
+const PREORDER: CheckUrl = (id) => `/preorders/payments/${id}/check`;
+const SUBSCRIPTION: CheckUrl = (id) => `/subscriptions/invoices/${id}/check`;
 
 export const usePayment = () => {
   const [status, setStatus] = useState<PaymentStatus>('idle');
   const [payment, setPayment] = useState<PaymentData | null>(null);
   const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const endpointsRef = useRef<PaymentEndpoints>(CHECKOUT);
 
   const stopPolling = () => {
     if (pollRef.current) {
@@ -45,26 +36,15 @@ export const usePayment = () => {
 
   useEffect(() => () => stopPolling(), []);
 
-  const startPolling = (paymentId: string, onPaid: () => void) => {
+  const startPolling = (url: string, onPaid: () => void) => {
     stopPolling();
     pollRef.current = setInterval(async () => {
       try {
-        const res = await api.get(endpointsRef.current.check(paymentId));
+        const res = await api.get(url);
         if (res.data.status === 'paid') {
           stopPolling();
           setStatus('paid');
           onPaid();
-        } else if (res.data.status === 'cancelled') {
-          stopPolling();
-          setStatus('error');
-          setError('Payment was cancelled.');
-        } else if (res.data.status === 'failed') {
-          // Paid, but an item sold out before we could fulfil it.
-          stopPolling();
-          setStatus('error');
-          setError(
-            'Payment received, but an item sold out first. We will refund you.'
-          );
         }
       } catch {
         // Transient network error; try again on the next tick.
@@ -75,33 +55,42 @@ export const usePayment = () => {
   // Gets QR data from `create`, shows it and waits for the payment
   const start = async (
     create: () => Promise<PaymentData>,
-    endpoints: PaymentEndpoints,
+    check: CheckUrl,
     onPaid: () => void
   ) => {
-    endpointsRef.current = endpoints;
     setStatus('creating');
     setError('');
+    setSaved(false);
     try {
       const data = await create();
       setPayment(data);
       setStatus('pending');
-      startPolling(data.paymentId, onPaid);
+      startPolling(check(data.paymentId), onPaid);
     } catch (e: any) {
       setError(e?.response?.data?.message ?? 'Failed to create payment.');
+      // The order was placed even though the QR couldn't be made
+      setSaved(e?.response?.data?.saved === true);
       setStatus('error');
     }
   };
 
-  // units: one "listingId:sizeMl" per decant
-  const createPayment = (
-    units: string[],
+  // Places a pre-order (one listing id per bottle) and pays its 50% deposit
+  const placePreorder = (
+    listingIds: string[],
     delivery: Delivery,
     onPaid: () => void
   ) =>
     start(
-      async () =>
-        (await api.post('/payments/create', { units, delivery })).data,
-      CHECKOUT,
+      async () => (await api.post('/preorders', { listingIds, delivery })).data,
+      PREORDER,
+      onPaid
+    );
+
+  // The deposit, if it wasn't paid at checkout, or the rest once it arrives
+  const payPreorder = (paymentId: string, onPaid: () => void) =>
+    start(
+      async () => (await api.post(`/preorders/payments/${paymentId}/pay`)).data,
+      PREORDER,
       onPaid
     );
 
@@ -114,33 +103,25 @@ export const usePayment = () => {
       onPaid
     );
 
-  const cancelPayment = async () => {
-    stopPolling();
-    const cancel = endpointsRef.current.cancel;
-    if (payment?.paymentId && cancel) {
-      await api.delete(cancel(payment.paymentId)).catch(() => {
-        /* best-effort */
-      });
-    }
-    setStatus('idle');
-    setPayment(null);
-    setError('');
-  };
-
+  // Closes the QR. Nothing is cancelled; the payment stays payable.
   const reset = () => {
     stopPolling();
     setStatus('idle');
     setPayment(null);
     setError('');
+    setSaved(false);
   };
 
   return {
     status,
     payment,
     error,
-    createPayment,
+    // Set when placing a pre-order saved it but its QR failed
+    saved,
+    placePreorder,
+    payPreorder,
     payInvoice,
-    cancelPayment,
+    cancelPayment: reset,
     reset,
   };
 };

@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { isAuthenticated } from '../../../shared/auth/token';
 import { useQueryClient } from '@tanstack/react-query';
 import { QuantityStepper } from '../../../shared/components/QuantityStepper';
-import { priceOf } from '../../../types/listing';
+import { splitPayment } from '../../../types/listing';
 import type { Delivery } from '../../../types/order';
 import {
   DeliveryForm,
@@ -22,20 +22,27 @@ export const CartDrawer = () => {
     setQuantity,
     removeItem,
     clearCart,
-    mlLeft,
+    roomLeft,
     total,
     isOpen,
     closeCart,
     itemCount,
   } = useCart();
-  const { status, payment, error, createPayment, cancelPayment, reset } =
-    usePayment();
+  const { status, payment, error, saved, placePreorder, reset } = usePayment();
   const navigate = useNavigate();
   const qc = useQueryClient();
   // Checkout is two steps: the cart, then where to deliver it
   const [step, setStep] = useState<'cart' | 'delivery'>('cart');
   const [delivery, setDelivery] = useState<Delivery>(loadSavedDelivery);
   const [errors, setErrors] = useState<Partial<Delivery>>({});
+  const { deposit, balance } = splitPayment(total);
+
+  const showOrders = () => {
+    reset();
+    closeCart();
+    setStep('cart');
+    navigate('/orders');
+  };
 
   const goToDelivery = () => {
     if (!isAuthenticated()) {
@@ -51,26 +58,26 @@ export const CartDrawer = () => {
     setErrors(found);
     if (Object.keys(found).length) return;
     saveDelivery(delivery);
-    // The API takes one "listingId:sizeMl" per decant: 2 × 5ml of a is
-    // ['a:5', 'a:5'].
-    const units = items.flatMap(({ listing, sizeMl, quantity }) =>
-      Array.from({ length: quantity }, () => `${listing.id}:${sizeMl}`)
+    // The API takes one listing id per bottle: 2 × a is ['a', 'a']
+    const listingIds = items.flatMap(({ listing, quantity }) =>
+      Array.from({ length: quantity }, () => listing.id)
     );
-    createPayment(units, delivery, () => {
+    placePreorder(listingIds, delivery, () => {
       clearCart();
-      setStep('cart');
-      qc.invalidateQueries({ queryKey: ['listings'] });
-      qc.invalidateQueries({ queryKey: ['orders'] });
-      setTimeout(() => {
-        reset();
-        closeCart();
-        navigate('/cart');
-      }, 2000);
+      qc.invalidateQueries({ queryKey: ['preorders'] });
+      setTimeout(showOrders, 2000);
     });
   };
 
-  const handleCancelPayment = () => {
-    cancelPayment();
+  // The pre-order is placed once the QR shows (or saved when only the QR
+  // failed), so closing it leaves an unpaid pre-order the customer can pay
+  // from their orders page
+  const closePayment = () => {
+    if (status === 'pending' || saved) {
+      clearCart();
+      qc.invalidateQueries({ queryKey: ['preorders'] });
+      showOrders();
+    } else reset();
   };
 
   const busy = status === 'creating' || status === 'pending';
@@ -81,7 +88,7 @@ export const CartDrawer = () => {
         status={status}
         payment={payment}
         error={error}
-        onCancel={handleCancelPayment}
+        onCancel={closePayment}
       />
 
       {isOpen && <div className="drawer-backdrop" onClick={closeCart} />}
@@ -90,7 +97,7 @@ export const CartDrawer = () => {
         <div className="drawer-header">
           <div className="drawer-title-row">
             <ShoppingBag size={15} color="var(--gold)" strokeWidth={1.5} />
-            <span className="drawer-title">YOUR CART</span>
+            <span className="drawer-title">YOUR PRE-ORDER</span>
             {itemCount > 0 && <span className="drawer-count">{itemCount}</span>}
           </div>
           <button
@@ -124,9 +131,9 @@ export const CartDrawer = () => {
               </button>
             </div>
           ) : (
-            items.map(({ listing, sizeMl, quantity }, i) => (
+            items.map(({ listing, quantity }, i) => (
               <div
-                key={`${listing.id}:${sizeMl}`}
+                key={listing.id}
                 className="drawer-item"
                 style={{ animationDelay: `${i * 0.05}s` }}
               >
@@ -139,21 +146,23 @@ export const CartDrawer = () => {
                 </div>
                 <div className="drawer-item-info">
                   <p className="drawer-item-title">{listing.title}</p>
-                  <p className="drawer-item-size">{sizeMl}ml decant</p>
+                  <p className="drawer-item-size">
+                    {listing.bottleMl}ml full bottle
+                  </p>
                   <QuantityStepper
                     size="sm"
                     value={quantity}
-                    max={quantity + Math.floor(mlLeft(listing) / sizeMl)}
-                    onChange={(q) => setQuantity(listing.id, sizeMl, q)}
+                    max={quantity + roomLeft}
+                    onChange={(q) => setQuantity(listing.id, q)}
                   />
                   <p className="drawer-item-price">
-                    {(priceOf(listing, sizeMl) * quantity).toLocaleString()}₮
+                    {((listing.bottlePrice ?? 0) * quantity).toLocaleString()}₮
                   </p>
                 </div>
                 <button
                   className="drawer-item-remove"
-                  onClick={() => removeItem(listing.id, sizeMl)}
-                  aria-label={`Remove ${sizeMl}ml ${listing.title}`}
+                  onClick={() => removeItem(listing.id)}
+                  aria-label={`Remove ${listing.title}`}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -170,6 +179,24 @@ export const CartDrawer = () => {
                 {total.toLocaleString()}₮
               </span>
             </div>
+            <div className="drawer-total-row">
+              <span className="drawer-total-label">PAY NOW (50%)</span>
+              <span className="drawer-total-value">
+                {deposit.toLocaleString()}₮
+              </span>
+            </div>
+            <div className="drawer-total-row">
+              <span className="drawer-total-label">WHEN IT ARRIVES IN UB</span>
+              <span className="drawer-total-label">
+                {balance.toLocaleString()}₮
+              </span>
+            </div>
+            <p className="drawer-note">
+              We import every bottle to order, usually in 1–2 weeks. Once it
+              lands in UB you pay the rest within 7 days and we deliver. The
+              deposit can&apos;t be refunded once we&apos;ve ordered, unless we
+              can&apos;t get the bottle.
+            </p>
 
             {/* The keys stop React reusing the CHECKOUT button as the submit
                 button mid-click, which would submit the empty form at once */}
@@ -189,10 +216,10 @@ export const CartDrawer = () => {
                   className="drawer-link-btn"
                   onClick={() => {
                     closeCart();
-                    navigate('/cart');
+                    navigate('/orders');
                   }}
                 >
-                  View order history
+                  View your orders
                 </button>
               </>
             ) : (
@@ -204,7 +231,7 @@ export const CartDrawer = () => {
                   className="drawer-checkout-btn"
                   disabled={busy}
                 >
-                  PAY WITH QPAY
+                  PAY {deposit.toLocaleString()}₮ WITH QPAY
                 </button>
                 <button
                   key="back"

@@ -1756,3 +1756,10 @@ label {
     padding: 1.25rem 1.5rem;
   }
 }
+
+.drawer-note {
+  font-size: 0.65rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+  margin: 0.25rem 0 0.75rem;
+}

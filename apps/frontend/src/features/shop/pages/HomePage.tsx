@@ -29,7 +29,7 @@ export default function HomePage() {
         <div className="hero-content fade-up">
           <div className="hero-eyebrow">
             <div className="eyebrow-line" />
-            <span className="eyebrow-text">LUXURY FRAGRANCE DECANTS</span>
+            <span className="eyebrow-text">FULL BOTTLES BY PRE-ORDER</span>
             <div className="eyebrow-line" />
           </div>
 
@@ -39,7 +39,7 @@ export default function HomePage() {
           </h1>
 
           <p className="hero-subtitle">
-            World-class fragrances. Yours to discover.
+            Genuine bottles imported to order. Pay half now, half when it lands.
           </p>
 
           <div className="hero-cta-row">
@@ -283,18 +283,18 @@ export default function HomePage() {
         {[
           {
             icon: '◈',
-            title: 'Authentic Decants',
-            desc: 'Sourced from original flacons',
+            title: 'Genuine Bottles',
+            desc: 'Imported from authorized sellers',
           },
           {
             icon: '◇',
-            title: 'Curated Houses',
-            desc: 'Only the finest maisons',
+            title: 'Pay Half Now',
+            desc: 'The rest when it arrives in UB',
           },
           {
             icon: '◉',
-            title: 'Sealed & Secure',
-            desc: 'Precision-filled, airtight vials',
+            title: 'Try Before You Buy',
+            desc: 'Two 5ml decants a month with a subscription',
           },
         ].map((f) => (
           <div key={f.title} className="craft-item">

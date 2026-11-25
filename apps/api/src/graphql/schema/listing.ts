@@ -1,11 +1,4 @@
 export const listingTypeDefs = `
-type ListingSize {
-  sizeMl: Int!
-  price: Float!
-  "How many of this size the ml left in the bottle can fill"
-  available: Int!
-}
-
 type Listing {
   id: ID!
   status: ListingStatus!
@@ -14,13 +7,14 @@ type Listing {
   picture: String!
   "Full bottle size in ml"
   bottleMl: Int!
-  "Ml left in the bottle, shared by every size"
+  "Ml left in our opened bottle, for subscription box decants"
   volumeMl: Int!
+  "Price of a full sealed bottle by pre-order. Not sold as a bottle when null."
+  bottlePrice: Float
   "Which subscription box slot it can fill"
   tier: ListingTier!
   "Who it suits, for matching boxes to subscribers"
   scentFor: ScentFor!
-  sizes: [ListingSize!]!
   orders: [Order!]!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -32,16 +26,10 @@ type ListingResponse {
 }
 
 extend type Query {
+  "Bottles customers can pre-order"
   listings(page: Int, limit: Int): ListingResponse!
   listing(id: ID!): Listing
   adminListings: [Listing!]!
-  "The fixed decant sizes every listing is priced in"
-  decantSizes: [Int!]!
-}
-
-input SizePriceInput {
-  sizeMl: Int!
-  price: Float!
 }
 
 input CreateListingInput {
@@ -49,9 +37,9 @@ input CreateListingInput {
   vibe: [String!]!
   picture: String!
   bottleMl: Int!
-  "Defaults to the full bottle"
+  "Defaults to the full bottle; 0 when we haven't opened one"
   volumeMl: Int
-  sizes: [SizePriceInput!]!
+  bottlePrice: Float
   tier: ListingTier
   scentFor: ScentFor
 }
@@ -63,7 +51,8 @@ input UpdateListingInput {
   bottleMl: Int
   volumeMl: Int
   status: ListingStatus
-  sizes: [SizePriceInput!]
+  "Send null to stop selling the full bottle"
+  bottlePrice: Float
   tier: ListingTier
   scentFor: ScentFor
 }

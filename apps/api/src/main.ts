@@ -13,6 +13,7 @@ import { logger } from './lib/logger';
 import adminRoutes from './modules/admin/routes/adminRoutes';
 import authRoutes from './modules/auth/routes';
 import paymentRoutes from './modules/payments/routes';
+import preorderRoutes from './modules/preorders/routes';
 import subscriptionRoutes from './modules/subscriptions/routes';
 import { runSubscriptionCalendar } from './modules/subscriptions/service';
 
@@ -44,6 +45,7 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/preorders', preorderRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 
 purgeExpiredTokens().catch(console.error);

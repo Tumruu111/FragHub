@@ -10,12 +10,10 @@ import {
   validateUserUpdate,
 } from '../../../lib/validation';
 import {
-  SMALLEST_SIZE_ML,
   statusForVolume,
-  validateSizePrices,
+  validateBottlePrice,
   validateVolume,
-  type SizePrice,
-} from '../../../lib/decants';
+} from '../../../lib/listings';
 
 interface UserFields {
   name: string;
@@ -37,7 +35,7 @@ interface CreateListingInput {
   picture: string;
   bottleMl: number;
   volumeMl?: number | null;
-  sizes: SizePrice[];
+  bottlePrice?: number | null;
   tier?: 'arabian' | 'designer' | 'niche' | null;
   scentFor?: 'masculine' | 'feminine' | 'unisex' | null;
 }
@@ -49,7 +47,7 @@ interface UpdateListingInput {
   bottleMl?: number;
   volumeMl?: number | null;
   status?: 'in_stock' | 'out_of_order';
-  sizes?: SizePrice[];
+  bottlePrice?: number | null;
   tier?: 'arabian' | 'designer' | 'niche' | null;
   scentFor?: 'masculine' | 'feminine' | 'unisex' | null;
 }
@@ -85,16 +83,17 @@ export const mutations = {
     requireAdmin(ctx);
     const user = await prisma.user.findUnique({ where: { id: args.id } });
     if (!user) throw new GraphQLError('User not found');
-    await prisma.order.deleteMany({ where: { userId: args.id } });
-    await prisma.user.delete({ where: { id: args.id } });
+    await prisma.$transaction([
+      prisma.order.deleteMany({ where: { userId: args.id } }),
+      prisma.preorder.deleteMany({ where: { userId: args.id } }),
+      prisma.subscription.deleteMany({ where: { userId: args.id } }),
+      prisma.user.delete({ where: { id: args.id } }),
+    ]);
     return true;
   },
 
-  // Orders are only created by the QPay flow (modules/payments), after the
-  // payment is confirmed. There is intentionally no mutation to place one.
-
-  // Orders are paid for, so only an admin settles them. Customers ask to
-  // cancel by contacting the shop, and the admin refunds them in QPay.
+  // Orders are the decants sent in subscription boxes, created when the admin
+  // confirms a box. Only an admin settles them.
 
   completeOrder: async (
     _: any,
@@ -129,13 +128,13 @@ export const mutations = {
       const order = await tx.order.findUniqueOrThrow({
         where: { id: args.orderId },
       });
-      await tx.listing.update({
+      const listing = await tx.listing.update({
         where: { id: order.listingId },
         data: { volumeMl: { increment: order.sizeMl } },
       });
-      await tx.listing.updateMany({
-        where: { id: order.listingId, volumeMl: { gte: SMALLEST_SIZE_ML } },
-        data: { status: 'in_stock' },
+      await tx.listing.update({
+        where: { id: order.listingId },
+        data: { status: statusForVolume(listing.volumeMl) },
       });
       return order;
     });
@@ -147,13 +146,14 @@ export const mutations = {
     ctx: GraphQLContext
   ) => {
     requireAdmin(ctx);
-    const { sizes, volumeMl, bottleMl, tier, scentFor, ...rest } = args.input;
+    const { bottlePrice, volumeMl, bottleMl, tier, scentFor, ...rest } =
+      args.input;
     const details = validate(listingDetailsSchema, rest);
     const ml = volumeMl ?? bottleMl;
     const error =
       details.error ??
       validateVolume(bottleMl, ml) ??
-      validateSizePrices(sizes);
+      validateBottlePrice(bottlePrice);
     if (error || !details.data) throw new GraphQLError(error ?? 'Invalid');
     return prisma.listing.create({
       data: {
@@ -162,8 +162,8 @@ export const mutations = {
         volumeMl: ml,
         tier: tier ?? undefined,
         scentFor: scentFor ?? undefined,
+        bottlePrice: bottlePrice ?? null,
         status: statusForVolume(ml),
-        sizes: { create: sizes },
       },
     });
   },
@@ -177,7 +177,7 @@ export const mutations = {
     const listing = await prisma.listing.findUnique({ where: { id: args.id } });
     if (!listing) throw new GraphQLError('Listing not found');
 
-    const { sizes, title, picture, vibe, tier, scentFor, ...input } =
+    const { bottlePrice, title, picture, vibe, tier, scentFor, ...input } =
       args.input;
     // Only the fields that were sent; GraphQL passes omitted ones as null
     const details = validate(
@@ -191,7 +191,7 @@ export const mutations = {
     const error =
       details.error ??
       validateVolume(bottleMl, volumeMl) ??
-      (sizes ? validateSizePrices(sizes) : null);
+      validateBottlePrice(bottlePrice);
     if (error) throw new GraphQLError(error);
 
     return prisma.listing.update({
@@ -207,7 +207,8 @@ export const mutations = {
         status:
           input.status ??
           (input.volumeMl != null ? statusForVolume(volumeMl) : undefined),
-        ...(sizes && { sizes: { deleteMany: {}, create: sizes } }),
+        // Sent as null stops selling the bottle; left out keeps the price
+        ...('bottlePrice' in args.input && { bottlePrice }),
       },
     });
   },

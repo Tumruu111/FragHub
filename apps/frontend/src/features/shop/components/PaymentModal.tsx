@@ -27,13 +27,16 @@ export const PaymentModal = ({ status, payment, error, onCancel }: Props) => {
               QPAY CHECKOUT
               <span className="qpay-header-rule" />
             </div>
-            <button className="qpay-close" onClick={onCancel} aria-label="Close">
+            <button
+              className="qpay-close"
+              onClick={onCancel}
+              aria-label="Close"
+            >
               <X size={17} />
             </button>
           </div>
 
           <div className="qpay-body">
-
             {status === 'creating' && (
               <div className="qpay-creating">
                 <RefreshCw size={26} className="qpay-spinner" />
@@ -49,7 +52,9 @@ export const PaymentModal = ({ status, payment, error, onCancel }: Props) => {
                     <span className="eyebrow-text">SCAN TO PAY</span>
                     <span className="eyebrow-line" />
                   </div>
-                  <p className="qpay-amount">{payment.amount.toLocaleString()}₮</p>
+                  <p className="qpay-amount">
+                    {payment.amount.toLocaleString()}₮
+                  </p>
                 </div>
 
                 <div className="qpay-qr-frame">
@@ -76,7 +81,11 @@ export const PaymentModal = ({ status, payment, error, onCancel }: Props) => {
                           target="_blank"
                           rel="noreferrer"
                         >
-                          <img className="qpay-bank-logo" src={u.logo} alt={u.name} />
+                          <img
+                            className="qpay-bank-logo"
+                            src={u.logo}
+                            alt={u.name}
+                          />
                           <span className="qpay-bank-name">{u.name}</span>
                         </a>
                       ))}
@@ -95,20 +104,24 @@ export const PaymentModal = ({ status, payment, error, onCancel }: Props) => {
               <div className="qpay-paid">
                 <div className="qpay-paid-mark">✓</div>
                 <p className="qpay-paid-title">Payment Confirmed</p>
-                <p className="qpay-paid-sub">YOUR ORDERS ARE BEING PROCESSED</p>
+                <p className="qpay-paid-sub">THANK YOU</p>
               </div>
             )}
 
             {status === 'error' && (
               <div className="qpay-error">
-                <p className="qpay-error-text">{error || 'Something went wrong.'}</p>
-                <button className="qpay-error-btn" onClick={onCancel}>CLOSE</button>
+                <p className="qpay-error-text">
+                  {error || 'Something went wrong.'}
+                </p>
+                <button className="qpay-error-btn" onClick={onCancel}>
+                  CLOSE
+                </button>
               </div>
             )}
 
             {(status === 'pending' || status === 'creating') && (
               <button className="qpay-cancel-link" onClick={onCancel}>
-                Cancel payment
+                Pay later
               </button>
             )}
           </div>

@@ -6,16 +6,14 @@ type Order {
   listingId: ID!
   listing: Listing!
   user: User!
-  "Decant size bought, in ml"
+  "Decant size, in ml"
   sizeMl: Int!
-  "Price paid for this decant"
+  "Its share of the month's subscription price"
   price: Float!
   buyerConfirmed: Boolean!
-  "The checkout this order came from. Orders from one checkout ship together."
-  paymentId: ID
-  "Where to deliver it. Orders from before delivery was added have none."
+  "Where to deliver it: the subscription's address"
   delivery: Delivery
-  "Set when the order is a decant from a subscription box, e.g. 2026-12"
+  "The subscription box month it was sent in, e.g. 2026-12"
   boxMonth: String
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -55,9 +53,9 @@ extend type Query {
 }
 
 extend type Mutation {
-  "Admin only: the decant was handed over or delivered"
+  "Admin only: the box decant was delivered"
   completeOrder(orderId: ID!): Order!
-  "Admin only: puts the ml back; the refund itself is done in QPay"
+  "Admin only: puts the ml back in the bottle"
   cancelOrder(orderId: ID!): Order!
 }
 `;

@@ -1,5 +1,4 @@
 import { prisma } from '../../../lib/prisma';
-import { DECANT_SIZES_ML } from '../../../lib/decants';
 import { GraphQLError } from 'graphql';
 import { requireAdmin, requireAuth } from '../../guards';
 import type { GraphQLContext } from '../../context';
@@ -26,13 +25,16 @@ export const queries = {
     const limit = Math.min(50, Math.max(1, args.limit ?? 12));
     const skip = (page - 1) * limit;
 
+    // The shop only shows bottles that can be pre-ordered
+    const where = { bottlePrice: { not: null } };
     const [data, total] = await Promise.all([
       prisma.listing.findMany({
+        where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      prisma.listing.count(),
+      prisma.listing.count({ where }),
     ]);
 
     return {
@@ -59,8 +61,6 @@ export const queries = {
     return prisma.listing.findMany({ orderBy: { createdAt: 'desc' } });
   },
 
-  decantSizes: () => DECANT_SIZES_ML,
-
   orders: async (_: any, __: any, ctx: GraphQLContext) => {
     requireAdmin(ctx);
     return prisma.order.findMany({ orderBy: { createdAt: 'desc' } });
@@ -76,10 +76,14 @@ export const queries = {
 
   adminStats: async (_: any, __: any, ctx: GraphQLContext) => {
     requireAdmin(ctx);
-    const [listings, orders] = await Promise.all([
+    const [listings, orders, delivered] = await Promise.all([
       prisma.listing.findMany({ select: { status: true } }),
       prisma.order.findMany({
         select: { status: true, createdAt: true, price: true },
+      }),
+      prisma.preorder.aggregate({
+        where: { status: 'delivered' },
+        _sum: { total: true },
       }),
     ]);
 
@@ -90,9 +94,12 @@ export const queries = {
     const pending = orders.filter((o) => o.status === 'pending').length;
     const completed = orders.filter((o) => o.status === 'completed').length;
     const cancelled = orders.filter((o) => o.status === 'cancelled').length;
-    const totalRevenue = orders
-      .filter((o) => o.status === 'completed')
-      .reduce((sum, o) => sum + Number(o.price), 0);
+    // Delivered box decants plus delivered full bottles
+    const totalRevenue =
+      orders
+        .filter((o) => o.status === 'completed')
+        .reduce((sum, o) => sum + Number(o.price), 0) +
+      Number(delivered._sum.total ?? 0);
 
     // Order counts for the last 7 days, oldest first, keyed by YYYY-MM-DD
     const ordersByDay = Array.from({ length: 7 }, (_, i) => {

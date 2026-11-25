@@ -42,8 +42,7 @@ const OrderActions = ({ order }: { order: AdminOrder }) => {
       {confirming ? (
         <>
           <p className="text-xs text-right" style={{ color: '#f87171' }}>
-            Puts {order.sizeMl}ml back in the bottle. Refund{' '}
-            {order.price.toLocaleString()}₮ in QPay yourself.
+            Puts {order.sizeMl}ml back in the bottle.
           </p>
           <div className="flex gap-2">
             <Button
@@ -112,8 +111,12 @@ export const AdminOrdersPage = () => {
             className="font-display text-3xl"
             style={{ color: 'var(--text)' }}
           >
-            Orders
+            Box decants
           </h1>
+          <p className="text-xs mt-2" style={{ color: 'var(--text-dim)' }}>
+            The decants in confirmed subscription boxes. Full-bottle pre-orders
+            are on the Pre-orders page.
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-2" role="tablist">
@@ -218,7 +221,7 @@ export const AdminOrdersPage = () => {
                       className="text-xs mt-2"
                       style={{ color: 'var(--text-dim)' }}
                     >
-                      No delivery details (ordered before checkout asked)
+                      No delivery details
                     </p>
                   )}
                   <p
@@ -229,12 +232,6 @@ export const AdminOrdersPage = () => {
                     {order.id.slice(0, 8).toUpperCase()}
                     {order.boxMonth && (
                       <> · {monthName(order.boxMonth)} subscription box</>
-                    )}
-                    {order.paymentId && (
-                      <>
-                        {' '}
-                        · checkout #{order.paymentId.slice(0, 8).toUpperCase()}
-                      </>
                     )}
                   </p>
                 </div>

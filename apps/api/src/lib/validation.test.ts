@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  createPaymentSchema,
+  createPreorderSchema,
   deliverySchema,
   listingDetailsSchema,
   loginSchema,
-  MAX_UNITS_PER_ORDER,
   registerSchema,
   validate,
   validateUserUpdate,
 } from './validation';
+import { MAX_BOTTLES_PER_ORDER } from './preorders';
 
 describe('registerSchema', () => {
   it('accepts a valid sign-up and trims the name', () => {
@@ -73,42 +73,44 @@ describe('validateUserUpdate', () => {
   });
 });
 
-describe('createPaymentSchema', () => {
+describe('createPreorderSchema', () => {
   const delivery = {
     phone: '99112233',
     address: 'Khan-Uul, 15th khoroo, building 12, apt 34',
   };
 
-  it('accepts listingId:sizeMl units with delivery details', () => {
+  it('accepts bottles, repeated for quantity, with delivery details', () => {
     expect(
-      validate(createPaymentSchema, {
-        units: ['a:5', 'a:5', 'b:10'],
+      validate(createPreorderSchema, {
+        listingIds: ['a', 'a', 'b'],
         delivery,
       }).error
     ).toBeUndefined();
   });
 
   it('requires delivery details', () => {
-    expect(validate(createPaymentSchema, { units: ['a:5'] }).error).toBe(
+    expect(validate(createPreorderSchema, { listingIds: ['a'] }).error).toBe(
       'Delivery details are required'
     );
   });
 
-  it('rejects an empty, malformed or oversized cart', () => {
-    expect(validate(createPaymentSchema, { units: [] }).error).toBe(
-      'No items provided'
-    );
-    expect(validate(createPaymentSchema, {}).error).toBe('No items provided');
+  it('rejects an empty, malformed or oversized order', () => {
     expect(
-      validate(createPaymentSchema, { units: ['a:5ml'] }).error
+      validate(createPreorderSchema, { listingIds: [], delivery }).error
+    ).toBe('No bottles chosen');
+    expect(validate(createPreorderSchema, { delivery }).error).toBe(
+      'No bottles chosen'
+    );
+    expect(
+      validate(createPreorderSchema, { listingIds: [''], delivery }).error
     ).toBeDefined();
     const tooMany = Array.from(
-      { length: MAX_UNITS_PER_ORDER + 1 },
-      () => 'a:2'
+      { length: MAX_BOTTLES_PER_ORDER + 1 },
+      () => 'a'
     );
-    expect(validate(createPaymentSchema, { units: tooMany }).error).toMatch(
-      /at most/
-    );
+    expect(
+      validate(createPreorderSchema, { listingIds: tooMany, delivery }).error
+    ).toMatch(/at most/);
   });
 });
 

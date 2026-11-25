@@ -1,12 +1,9 @@
 import { Router } from 'express';
-import { createPayment, checkPayment, cancelPayment, paymentCallback } from './controllers';
-import { apiLimiter } from '../../lib/rateLimits';
+import { paymentCallback } from './controllers';
 
+// The QPay callback, for pre-order payments and subscription months alike
 const router = Router();
 
-router.post('/create', apiLimiter, createPayment);
-router.get('/:id/check', apiLimiter, checkPayment);
-router.delete('/:id', apiLimiter, cancelPayment);
 router.post('/callback', paymentCallback);
 router.get('/callback', paymentCallback);
 

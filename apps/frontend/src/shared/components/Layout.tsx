@@ -50,7 +50,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
             {(
               [
                 ['/', 'Collection'],
-                ['/cart', 'Orders'],
+                ['/orders', 'Orders'],
                 ['/subscription', 'Subscription'],
               ] as [string, string][]
             ).map(([path, label]) => (
@@ -122,7 +122,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
             {(
               [
                 ['/', 'Collection'],
-                ['/cart', 'Orders'],
+                ['/orders', 'Orders'],
                 ['/subscription', 'Subscription'],
               ] as [string, string][]
             ).map(([path, label]) => (
@@ -153,9 +153,9 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
           <div className="footer-brand-col">
             <div className="footer-logo">VERITAS PARFUMS</div>
             <p className="footer-tagline">
-              World-class fragrance decants,
+              A monthly perfume subscription,
               <br />
-              curated for the discerning nose.
+              and the full bottles you fall for.
             </p>
             <div className="footer-ornament">
               <div className="footer-line" />
@@ -175,7 +175,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
               <Link to="/" className="footer-link">
                 Collection
               </Link>
-              <Link to="/cart" className="footer-link">
+              <Link to="/orders" className="footer-link">
                 My Orders
               </Link>
               <Link to="/login" className="footer-link">
@@ -261,7 +261,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
 
         <div className="footer-bottom">
           <p className="footer-copy">
-            © 2026 Veritas Parfums · Luxury Fragrance Decants
+            © 2026 Veritas Parfums · Perfume Subscription &amp; Full Bottles
           </p>
         </div>
       </footer>

@@ -1,11 +1,6 @@
-export interface ListingSize {
-  sizeMl: number;
-  price: number;
-  // How many of this size the ml left in the bottle can fill
-  available: number;
-}
-
-// A listing is one bottle; every decant size draws from its volumeMl.
+// A listing is one scent. Our opened bottle of it (volumeMl) fills
+// subscription box decants; with a bottlePrice, customers can pre-order a
+// full sealed bottle, which we import for them.
 export interface Listing {
   id: string;
   title: string;
@@ -14,10 +9,11 @@ export interface Listing {
   status: 'in_stock' | 'out_of_order';
   bottleMl: number;
   volumeMl: number;
+  // Full bottle price; null when it isn't sold as a bottle
+  bottlePrice: number | null;
   // Which subscription box slot it fills, and who it suits
   tier: ListingTier;
   scentFor: ScentFor;
-  sizes: ListingSize[];
   createdAt: string;
   updatedAt: string;
 }
@@ -29,9 +25,10 @@ export interface ListingsResponse {
   data: Listing[];
 }
 
-export const priceOf = (listing: Listing, sizeMl: number) =>
-  listing.sizes.find((s) => s.sizeMl === sizeMl)?.price ?? 0;
+// Pre-orders are paid in two halves, the first rounded up (as the server does)
+export const splitPayment = (total: number) => {
+  const deposit = Math.ceil(total / 2);
+  return { deposit, balance: total - deposit };
+};
 
-export const isSoldOut = (listing: Listing) =>
-  listing.status === 'out_of_order' ||
-  !listing.sizes.some((s) => s.available > 0);
+export const MAX_BOTTLES_PER_ORDER = 10;

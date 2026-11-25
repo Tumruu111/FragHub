@@ -13,22 +13,12 @@ const ADMIN_LISTINGS_QUERY = gql`
       status
       bottleMl
       volumeMl
+      bottlePrice
       tier
       scentFor
-      sizes {
-        sizeMl
-        price
-        available
-      }
       createdAt
       updatedAt
     }
-  }
-`;
-
-const DECANT_SIZES_QUERY = gql`
-  query DecantSizes {
-    decantSizes
   }
 `;
 
@@ -52,7 +42,7 @@ export interface NewListing {
   vibe: string[];
   bottleMl: number;
   volumeMl?: number;
-  sizes: { sizeMl: number; price: number }[];
+  bottlePrice: number | null;
   tier: ListingTier;
   scentFor: ScentFor;
 }
@@ -116,16 +106,3 @@ export const useAdminListings = () => {
     isDeleting: deleteMutation.isPending,
   };
 };
-
-// The fixed decant sizes every listing is priced in, e.g. [2, 5, 10]
-export const useDecantSizes = () =>
-  useQuery<number[]>({
-    queryKey: ['decantSizes'],
-    queryFn: async () => {
-      const res = await graphQLClient.request<{ decantSizes: number[] }>(
-        DECANT_SIZES_QUERY
-      );
-      return res.decantSizes;
-    },
-    staleTime: Infinity,
-  });

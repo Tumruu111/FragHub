@@ -1,6 +1,6 @@
 import type { FC } from 'react';
-import { isSoldOut } from '../../../types/listing';
 import type { Listing } from '../../../types/listing';
+import { useCart } from '../hooks/useCart';
 
 type ProductCardProps = {
   listing: Listing;
@@ -8,9 +8,8 @@ type ProductCardProps = {
 };
 
 export const ProductCard: FC<ProductCardProps> = ({ listing, onClick }) => {
-  const { title, picture, vibe: vibes, sizes } = listing;
-  const outOfStock = isSoldOut(listing);
-  const fromPrice = sizes.length ? Math.min(...sizes.map((s) => s.price)) : 0;
+  const { title, picture, vibe: vibes, bottleMl, bottlePrice } = listing;
+  const { addItem, roomLeft } = useCart();
 
   return (
     <div className="pcard" onClick={onClick}>
@@ -22,20 +21,13 @@ export const ProductCard: FC<ProductCardProps> = ({ listing, onClick }) => {
         <div className="corner-tl" />
         <div className="corner-br" />
 
-        {outOfStock && (
-          <div className="pcard-oos">
-            <span className="oos-text">ÉPUISÉ</span>
-          </div>
-        )}
-
-        {!outOfStock && (
+        {roomLeft > 0 && (
           <div className="pcard-add-wrap">
-            {/* Decants come in several sizes, so choose one on the product page */}
             <button
               className="pcard-add-btn"
               onClick={(e) => {
                 e.stopPropagation();
-                onClick();
+                addItem(listing);
               }}
             >
               <svg
@@ -52,7 +44,7 @@ export const ProductCard: FC<ProductCardProps> = ({ listing, onClick }) => {
                   strokeLinecap="round"
                 />
               </svg>
-              CHOOSE SIZE
+              PRE-ORDER
             </button>
           </div>
         )}
@@ -60,9 +52,7 @@ export const ProductCard: FC<ProductCardProps> = ({ listing, onClick }) => {
 
       <div className="pcard-info">
         <h3 className="pcard-title">{title}</h3>
-        <p className="pcard-size">
-          {sizes.map((s) => `${s.sizeMl}ml`).join(' · ')}
-        </p>
+        <p className="pcard-size">{bottleMl}ml · full bottle</p>
 
         {vibes?.length > 0 && (
           <div className="pcard-vibes">
@@ -76,10 +66,9 @@ export const ProductCard: FC<ProductCardProps> = ({ listing, onClick }) => {
 
         <div className="pcard-price-row">
           <span className="pcard-price">
-            {sizes.length > 1 && 'from '}
-            {fromPrice.toLocaleString()}₮
+            {(bottlePrice ?? 0).toLocaleString()}₮
           </span>
-          {!outOfStock && <span className="pcard-avail">In stock</span>}
+          <span className="pcard-avail">Pay 50% now</span>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 // Runs every migration against a real Postgres, with listings and orders in
 // the shape they had before the decant migration, then checks what it made of
-// them. See src/test/db.ts for how to run it.
+// them. Later migrations then drop decant prices (pre-orders replaced decant
+// sales), which the last test checks. See src/test/db.ts for how to run it.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Client } from 'pg';
 import { applyMigrations, connectToFreshSchema } from './db';
@@ -26,15 +27,6 @@ const listing = async (id: string) =>
       [id]
     )
   ).rows[0];
-
-const sizes = async (id: string) =>
-  (
-    await db.query(
-      `SELECT "sizeMl", "price"::float AS "price" FROM "ListingSize"
-       WHERE "listingId" = $1 ORDER BY "sizeMl"`,
-      [id]
-    )
-  ).rows;
 
 const order = async (id: string) =>
   (
@@ -83,17 +75,6 @@ describe('decant migration', () => {
     expect(await listing('thirty')).toMatchObject({ volumeMl: 60 });
   });
 
-  it('keeps the old price as the price of a matching decant size', async () => {
-    expect(await sizes('five')).toEqual([{ sizeMl: 5, price: 18000 }]);
-    expect(await sizes('ten-spaced')).toEqual([{ sizeMl: 10, price: 30000 }]);
-    expect(await sizes('two-empty')).toEqual([{ sizeMl: 2, price: 9000 }]);
-  });
-
-  it('sets no prices for sizes outside 2, 5 and 10ml', async () => {
-    expect(await sizes('thirty')).toEqual([]);
-    expect(await sizes('travel')).toEqual([]);
-  });
-
   it('marks listings with less than 2ml left out of stock', async () => {
     expect(await listing('two-empty')).toMatchObject({
       status: 'out_of_order',
@@ -120,5 +101,18 @@ describe('decant migration', () => {
     expect(columns).not.toContain('size');
     expect(columns).not.toContain('stock');
     expect(columns).not.toContain('price');
+  });
+
+  it('ends with full-bottle pre-orders instead of decant sales', async () => {
+    const { rows } = await db.query(
+      `SELECT table_name FROM information_schema.tables
+       WHERE table_schema = 'test_migrations'`
+    );
+    const tables = rows.map((r) => r.table_name);
+    expect(tables).not.toContain('ListingSize');
+    expect(tables).not.toContain('Payment');
+    expect(tables).toContain('Preorder');
+    // Orders already placed are kept
+    expect(await order('order-five')).toEqual({ sizeMl: 5, price: 18000 });
   });
 });

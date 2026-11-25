@@ -16,15 +16,16 @@ model User {
   role      Role    @default(User)
 
   orders    Order[]
-  payments  Payment[]
+  preorders Preorder[]
   subscription Subscription?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// A listing is one bottle. Its ml are shared by the decant sizes: selling a
-// 10ml decant takes 10ml out of volumeMl, which every size draws from.
+// A listing is one scent. Its opened bottle (volumeMl) fills subscription box
+// decants; with a bottlePrice set, customers can also pre-order a full,
+// sealed bottle of it, which we import for them.
 model Listing {
   id        String         @id @default(uuid())
   status    ListingStatus  @default(in_stock)
@@ -32,29 +33,20 @@ model Listing {
   vibe      String[]
   picture   String
   bottleMl  Int            @default(0) // full bottle size, e.g. 100
-  volumeMl  Int            @default(0) // ml left to decant
+  volumeMl  Int            @default(0) // ml left to decant for boxes
+  // Price of a full sealed bottle. Not sold as a bottle when empty.
+  bottlePrice Decimal?     @db.Decimal(10,2)
   // What subscription boxes may use it for: a Base box is one designer and
   // one arabian decant, and "him" boxes only get masculine or unisex scents
   tier      ListingTier    @default(designer)
   scentFor  ScentFor       @default(unisex)
 
-  sizes     ListingSize[]
   orders    Order[]
+  preorderItems PreorderItem[]
   boxItems  BoxItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-// The price of one decant size of a listing, e.g. 5ml for 18,000₮
-model ListingSize {
-  id        String   @id @default(uuid())
-  listingId String
-  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  sizeMl    Int
-  price     Decimal  @db.Decimal(10,2)
-
-  @@unique([listingId, sizeMl])
 }
 
 model Order {
@@ -71,10 +63,7 @@ model Order {
 
   buyerConfirmed  Boolean      @default(false)
 
-  // The checkout this order came from, which holds the delivery details
-  paymentId       String?
-  payment         Payment?     @relation(fields: [paymentId], references: [id], onDelete: SetNull)
-  // Or the subscription box it was sent in, whose subscription holds the
+  // The subscription box it was sent in, whose subscription holds the
   // delivery details
   boxId           String?
   box             Box?         @relation(fields: [boxId], references: [id], onDelete: SetNull)
@@ -84,7 +73,6 @@ model Order {
   completedAt     DateTime?
   cancelledAt     DateTime?
 
-  @@index([paymentId])
   @@index([boxId])
 }
 
@@ -217,30 +205,84 @@ enum PaymentStatus {
   cancelled
 }
 
-model Payment {
-  id             String        @id @default(uuid())
-  userId         String
-  user           User          @relation(fields: [userId], references: [id])
-  amount         Decimal       @db.Decimal(10,2)
-  status         PaymentStatus @default(pending)
-  listingIds     String[]
-  qpayInvoiceId  String?
-  qpayQrText     String?
-  qpayQrImage    String?       @db.Text
-  qpayUrls       Json?
+// A full-bottle pre-order. The customer pays half up front; we order the
+// bottles from our supplier, and once they arrive in UB the customer pays the
+// rest and we deliver.
+enum PreorderStatus {
+  awaiting_deposit // placed, deposit not paid yet
+  ordering         // deposit paid: we order it from the supplier
+  arrived          // in UB: waiting for the rest to be paid
+  paid             // fully paid: ready to deliver
+  delivered
+  cancelled
+}
 
-  // Where to deliver the decants. Older payments have none.
-  deliveryPhone   String?
-  deliveryAddress String?
+enum PreorderPaymentKind {
+  deposit
+  balance
+}
+
+model Preorder {
+  id              String          @id @default(uuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id])
+  status          PreorderStatus  @default(awaiting_deposit)
+  total           Decimal         @db.Decimal(10,2)
+  deposit         Decimal         @db.Decimal(10,2)
+
+  deliveryPhone   String
+  deliveryAddress String
   deliveryNote    String?
 
-  orders         Order[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  items           PreorderItem[]
+  payments        PreorderPayment[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  depositPaidAt   DateTime?
+  arrivedAt       DateTime?
+  paidAt          DateTime?
+  deliveredAt     DateTime?
+  cancelledAt     DateTime?
 
   @@index([userId])
   @@index([status])
 }
+
+// One bottle in a pre-order, with its title and price when it was placed
+model PreorderItem {
+  id         String    @id @default(uuid())
+  preorderId String
+  preorder   Preorder  @relation(fields: [preorderId], references: [id], onDelete: Cascade)
+  listingId  String?
+  listing    Listing?  @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  title      String
+  bottleMl   Int
+  price      Decimal   @db.Decimal(10,2)
+
+  @@index([preorderId])
+  @@index([listingId])
+}
+
+// The deposit or the rest, each paid by QPay
+model PreorderPayment {
+  id            String              @id @default(uuid())
+  preorderId    String
+  preorder      Preorder            @relation(fields: [preorderId], references: [id], onDelete: Cascade)
+  kind          PreorderPaymentKind
+  amount        Decimal             @db.Decimal(10,2)
+  status        PaymentStatus       @default(pending)
+  qpayInvoiceId String?
+  qpayQrText    String?
+  qpayQrImage   String?             @db.Text
+  qpayUrls      Json?
+  paidAt        DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@unique([preorderId, kind])
+}
+
 model TokenBlacklist {
   id        String   @id @default(uuid())
   token     String   @unique

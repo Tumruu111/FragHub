@@ -38,7 +38,7 @@ afterAll(async () => {
 beforeEach(async () => {
   await db.query(
     `TRUNCATE "Order", "BoxItem", "Box", "SubscriptionInvoice",
-       "Subscription", "ListingSize", "Listing", "User" CASCADE`
+       "Subscription", "Listing", "User" CASCADE`
   );
 });
 

@@ -2,7 +2,6 @@ import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import { sendEmail } from '../../lib/email';
 import { config } from '../../config';
-import { SMALLEST_SIZE_ML } from '../../lib/decants';
 import {
   BOX_SIZE_ML,
   LAST_PAY_DAY,
@@ -211,7 +210,7 @@ export const confirmBox = async (boxId: string) =>
         );
       }
       await tx.listing.updateMany({
-        where: { id: listingId, volumeMl: { lt: SMALLEST_SIZE_ML } },
+        where: { id: listingId, volumeMl: { lt: BOX_SIZE_ML } },
         data: { status: 'out_of_order' },
       });
       await tx.order.create({

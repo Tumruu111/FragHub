@@ -1,8 +1,9 @@
 # Veritas Parfums
 
-A shop for perfume decants. The admin lists a bottle (for example a 100ml
-Dior Sauvage) and sets a price for each decant size (2, 5 and 10ml). All the
-sizes draw from the ml left in the same bottle. Customers pay with QPay.
+A perfume subscription with full bottles to order. Subscribers get two 5ml
+decants a month, picked from our opened bottles. Anyone can pre-order a full
+sealed bottle: they pay half up front, we import it, and they pay the rest when
+it arrives in UB, before we deliver. Customers pay with QPay.
 
 ## Layout
 

@@ -6,24 +6,29 @@ import {
   useCallback,
 } from 'react';
 import type { ReactNode } from 'react';
-import { priceOf } from '../../../types/listing';
+import { MAX_BOTTLES_PER_ORDER } from '../../../types/listing';
 import type { Listing } from '../../../types/listing';
 
-// One cart line is a decant size of a listing, e.g. 3 × 5ml of Sauvage
+// What the cart needs to know about a bottle
+export type CartListing = Pick<
+  Listing,
+  'id' | 'title' | 'picture' | 'bottleMl' | 'bottlePrice'
+>;
+
+// One cart line is a full bottle of a listing, e.g. 2 × Sauvage 100ml
 export interface CartItem {
-  listing: Listing;
-  sizeMl: number;
+  listing: CartListing;
   quantity: number;
 }
 
 interface CartContextValue {
   items: CartItem[];
-  addItem: (listing: Listing, sizeMl: number, quantity?: number) => void;
-  setQuantity: (listingId: string, sizeMl: number, quantity: number) => void;
-  removeItem: (listingId: string, sizeMl: number) => void;
+  addItem: (listing: CartListing, quantity?: number) => void;
+  setQuantity: (listingId: string, quantity: number) => void;
+  removeItem: (listingId: string) => void;
   clearCart: () => void;
-  // Ml of this bottle still free after what's already in the cart
-  mlLeft: (listing: Listing) => number;
+  // How many more bottles fit in one pre-order
+  roomLeft: number;
   itemCount: number;
   total: number;
   isOpen: boolean;
@@ -35,27 +40,19 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 const STORAGE_KEY = 'veritas_cart';
 
-const sameLine = (item: CartItem, listingId: string, sizeMl: number) =>
-  item.listing.id === listingId && item.sizeMl === sizeMl;
-
-// Every size of a listing shares one bottle, so its ml in the cart is summed
-const mlInCart = (items: CartItem[], listingId: string, except?: number) =>
-  items
-    .filter((i) => i.listing.id === listingId && i.sizeMl !== except)
-    .reduce((sum, i) => sum + i.sizeMl * i.quantity, 0);
-
-// The most of one size that fits next to the rest of the cart
-const maxQuantity = (items: CartItem[], listing: Listing, sizeMl: number) =>
-  Math.floor((listing.volumeMl - mlInCart(items, listing.id, sizeMl)) / sizeMl);
+const countOf = (items: CartItem[]) =>
+  items.reduce((sum, i) => sum + i.quantity, 0);
 
 const loadCart = (): CartItem[] => {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
-    // Drop lines saved before decant sizes existed
+    // Drop decant lines saved before the shop sold full bottles
     return Array.isArray(stored)
       ? stored.filter(
           (i) =>
-            typeof i?.sizeMl === 'number' && Array.isArray(i.listing?.sizes)
+            typeof i?.quantity === 'number' &&
+            typeof i.listing?.bottlePrice === 'number' &&
+            i.sizeMl === undefined
         )
       : [];
   } catch {
@@ -71,62 +68,43 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
-  // Quantities are capped by the ml we last saw in the bottle; the server
-  // re-checks at checkout.
-  const addItem = useCallback(
-    (listing: Listing, sizeMl: number, quantity = 1) => {
-      setItems((prev) => {
-        // Refresh the listing snapshot on every line of this bottle
-        const updated = prev.map((i) =>
-          i.listing.id === listing.id ? { ...i, listing } : i
-        );
-        const max = maxQuantity(updated, listing, sizeMl);
-        const existing = updated.find((i) => sameLine(i, listing.id, sizeMl));
-        if (existing)
-          return updated.map((i) =>
-            i === existing
-              ? { ...i, quantity: Math.min(i.quantity + quantity, max) }
-              : i
-          );
-        if (max < 1) return updated;
-        return [
-          ...updated,
-          { listing, sizeMl, quantity: Math.min(quantity, max) },
-        ];
-      });
-      setIsOpen(true);
-    },
-    []
-  );
+  // Bottles are imported to order, so there's no stock to run out of; only
+  // the size of one pre-order is capped. The server re-checks prices.
+  const addItem = useCallback((listing: CartListing, quantity = 1) => {
+    setItems((prev) => {
+      const room = MAX_BOTTLES_PER_ORDER - countOf(prev);
+      const add = Math.min(quantity, room);
+      if (add < 1) return prev;
+      const existing = prev.find((i) => i.listing.id === listing.id);
+      return existing
+        ? prev.map((i) =>
+            i === existing ? { listing, quantity: i.quantity + add } : i
+          )
+        : [...prev, { listing, quantity: add }];
+    });
+    setIsOpen(true);
+  }, []);
 
-  const setQuantity = useCallback(
-    (listingId: string, sizeMl: number, quantity: number) => {
-      setItems((prev) =>
-        prev.flatMap((i) => {
-          if (!sameLine(i, listingId, sizeMl)) return [i];
-          if (quantity < 1) return [];
-          const max = maxQuantity(prev, i.listing, sizeMl);
-          return [{ ...i, quantity: Math.min(quantity, max) }];
-        })
-      );
-    },
-    []
-  );
+  const setQuantity = useCallback((listingId: string, quantity: number) => {
+    setItems((prev) =>
+      prev.flatMap((i) => {
+        if (i.listing.id !== listingId) return [i];
+        if (quantity < 1) return [];
+        const max = MAX_BOTTLES_PER_ORDER - (countOf(prev) - i.quantity);
+        return [{ ...i, quantity: Math.min(quantity, max) }];
+      })
+    );
+  }, []);
 
-  const removeItem = useCallback((listingId: string, sizeMl: number) => {
-    setItems((prev) => prev.filter((i) => !sameLine(i, listingId, sizeMl)));
+  const removeItem = useCallback((listingId: string) => {
+    setItems((prev) => prev.filter((i) => i.listing.id !== listingId));
   }, []);
 
   const clearCart = useCallback(() => setItems([]), []);
 
-  const mlLeft = useCallback(
-    (listing: Listing) => listing.volumeMl - mlInCart(items, listing.id),
-    [items]
-  );
-
-  const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+  const itemCount = countOf(items);
   const total = items.reduce(
-    (sum, i) => sum + priceOf(i.listing, i.sizeMl) * i.quantity,
+    (sum, i) => sum + (i.listing.bottlePrice ?? 0) * i.quantity,
     0
   );
 
@@ -138,7 +116,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setQuantity,
         removeItem,
         clearCart,
-        mlLeft,
+        roomLeft: MAX_BOTTLES_PER_ORDER - itemCount,
         itemCount,
         total,
         isOpen,

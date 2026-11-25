@@ -12,11 +12,7 @@ const LISTING_FIELDS = gql`
     status
     bottleMl
     volumeMl
-    sizes {
-      sizeMl
-      price
-      available
-    }
+    bottlePrice
   }
 `;
 

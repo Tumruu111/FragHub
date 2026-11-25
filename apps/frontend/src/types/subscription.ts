@@ -24,7 +24,10 @@ export interface BoxItem {
   id: string;
   tier: ListingTier;
   sizeMl: number;
-  listing: Pick<Listing, 'id' | 'title' | 'picture'> | null;
+  listing: Pick<
+    Listing,
+    'id' | 'title' | 'picture' | 'bottleMl' | 'bottlePrice'
+  > | null;
 }
 
 export interface Box {

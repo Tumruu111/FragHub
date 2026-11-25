@@ -8,6 +8,7 @@ import { Button } from '../../../shared/components/Button';
 import { isAuthenticated } from '../../../shared/auth/token';
 import { PaymentModal } from '../../shop/components/PaymentModal';
 import { usePayment } from '../../shop/hooks/usePayment';
+import { useCart } from '../../shop/hooks/useCart';
 import {
   DeliveryForm,
   deliveryErrors,
@@ -26,6 +27,7 @@ import {
   PLAN_NAMES,
   TIER_NAMES,
   monthName,
+  type BoxItem,
   type SubscriberFor,
   type Subscription,
   type SubscriptionPlan,
@@ -322,9 +324,18 @@ const Overview = ({
                   style={{ color: 'var(--text-muted)' }}
                 >
                   {b.items.map((i) => (
-                    <li key={i.id}>
-                      {i.listing?.title ?? '—'} · {i.sizeMl}ml{' '}
-                      {TIER_NAMES[i.tier]}
+                    <li
+                      key={i.id}
+                      className="flex items-center justify-between gap-3 flex-wrap"
+                    >
+                      <span>
+                        {i.listing?.title ?? '—'} · {i.sizeMl}ml{' '}
+                        {TIER_NAMES[i.tier]}
+                      </span>
+                      {/* Loved it? Pre-order the full bottle */}
+                      {i.listing?.bottlePrice != null && (
+                        <BuyBottle listing={i.listing} />
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -373,6 +384,25 @@ const Overview = ({
           </button>
         ))}
     </div>
+  );
+};
+
+// A box decant's full bottle, straight into the pre-order cart
+const BuyBottle = ({
+  listing,
+}: {
+  listing: NonNullable<BoxItem['listing']>;
+}) => {
+  const { addItem } = useCart();
+  return (
+    <button
+      type="button"
+      onClick={() => addItem(listing)}
+      className="text-xs tracking-widest underline"
+      style={{ color: 'var(--gold)' }}
+    >
+      BUY THE FULL BOTTLE · {(listing.bottlePrice ?? 0).toLocaleString()}₮
+    </button>
   );
 };
 

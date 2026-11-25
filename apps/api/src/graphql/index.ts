@@ -5,6 +5,12 @@ import { listingTypeDefs } from './schema/listing';
 import { userTypeDefs } from './schema/user';
 import { orderTypeDefs } from './schema/order';
 import { subscriptionTypeDefs } from './schema/subscription';
+import { preorderTypeDefs } from './schema/preorder';
+import {
+  preorderMutations,
+  preorderQueries,
+  preorderTypes,
+} from './resolvers/preorders';
 import {
   subscriptionMutations,
   subscriptionQueries,
@@ -13,7 +19,6 @@ import {
 import { queries } from './resolvers/queries/listingQueries';
 import { mutations } from './resolvers/mutations/mutations';
 import { prisma } from '../lib/prisma';
-import { availableUnits } from '../lib/decants';
 import type { GraphQLContext } from './context';
 import { config } from '../config';
 
@@ -25,24 +30,16 @@ export const apolloServer = new ApolloServer<GraphQLContext>({
     userTypeDefs,
     orderTypeDefs,
     subscriptionTypeDefs,
+    preorderTypeDefs,
   ],
   resolvers: {
-    Query: { ...queries, ...subscriptionQueries },
-    Mutation: { ...mutations, ...subscriptionMutations },
+    Query: { ...queries, ...subscriptionQueries, ...preorderQueries },
+    Mutation: { ...mutations, ...subscriptionMutations, ...preorderMutations },
     ...subscriptionTypes,
-    // Prisma batches same-tick findUnique calls (including fluent relation
-    // reads like .sizes()) into one query — no N+1
+    ...preorderTypes,
     Listing: {
-      sizes: async (parent: { id: string; volumeMl: number }) => {
-        const sizes = await prisma.listing
-          .findUnique({ where: { id: parent.id } })
-          .sizes({ orderBy: { sizeMl: 'asc' } });
-        return (sizes ?? []).map((s) => ({
-          sizeMl: s.sizeMl,
-          price: Number(s.price),
-          available: availableUnits(parent.volumeMl, s.sizeMl),
-        }));
-      },
+      bottlePrice: (parent: { bottlePrice: unknown }) =>
+        parent.bottlePrice == null ? null : Number(parent.bottlePrice),
     },
     Order: {
       listing: (parent: { listingId: string }) =>
@@ -55,32 +52,18 @@ export const apolloServer = new ApolloServer<GraphQLContext>({
           ? (await prisma.box.findUnique({ where: { id: parent.boxId } }))
               ?.month ?? null
           : null,
-      delivery: async (parent: {
-        paymentId: string | null;
-        boxId: string | null;
-      }) => {
-        // A box decant goes to the subscription's address
-        if (parent.boxId) {
-          const s = await prisma.box
-            .findUnique({ where: { id: parent.boxId } })
-            .subscription();
-          return s
-            ? {
-                phone: s.deliveryPhone,
-                address: s.deliveryAddress,
-                note: s.deliveryNote,
-              }
-            : null;
-        }
-        if (!parent.paymentId) return null;
-        const p = await prisma.payment.findUnique({
-          where: { id: parent.paymentId },
-        });
-        return p?.deliveryPhone && p.deliveryAddress
+      // A box decant goes to the subscription's address. Prisma batches
+      // same-tick findUnique calls, so a list of orders is not N+1.
+      delivery: async (parent: { boxId: string | null }) => {
+        if (!parent.boxId) return null;
+        const s = await prisma.box
+          .findUnique({ where: { id: parent.boxId } })
+          .subscription();
+        return s
           ? {
-              phone: p.deliveryPhone,
-              address: p.deliveryAddress,
-              note: p.deliveryNote,
+              phone: s.deliveryPhone,
+              address: s.deliveryAddress,
+              note: s.deliveryNote,
             }
           : null;
       },

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_BOTTLES_PER_ORDER } from './preorders';
 
 // Input rules for everything users and admins send us. Each schema both
 // checks and cleans (trims) the data, so handlers use the parsed result.
@@ -34,8 +35,6 @@ export const userUpdateSchema = z
     error: 'No fields to update',
   });
 
-export const MAX_UNITS_PER_ORDER = 50;
-
 // Where to deliver an order. Phone numbers are Mongolian: 8 digits, written
 // with or without +976, spaces or dashes, and stored as just the 8 digits.
 export const deliverySchema = z.object(
@@ -61,14 +60,14 @@ export const deliverySchema = z.object(
   { error: 'Delivery details are required' }
 );
 
-// Checkout: one "listingId:sizeMl" per decant, repeated for quantity, and
-// where to deliver them
-export const createPaymentSchema = z.object({
-  units: z
-    .array(z.string().regex(/^.+:\d+$/), { error: 'No items provided' })
-    .min(1, { error: 'No items provided' })
-    .max(MAX_UNITS_PER_ORDER, {
-      error: `You can order at most ${MAX_UNITS_PER_ORDER} items at once`,
+// Pre-ordering full bottles: one listing id per bottle, repeated for
+// quantity, and where to deliver them
+export const createPreorderSchema = z.object({
+  listingIds: z
+    .array(z.string().min(1), { error: 'No bottles chosen' })
+    .min(1, { error: 'No bottles chosen' })
+    .max(MAX_BOTTLES_PER_ORDER, {
+      error: `You can pre-order at most ${MAX_BOTTLES_PER_ORDER} bottles at once`,
     }),
   delivery: deliverySchema,
 });
@@ -82,7 +81,7 @@ export const subscribeSchema = z.object({
   delivery: deliverySchema,
 });
 
-// The descriptive fields of a listing (ml and prices are checked in decants)
+// The descriptive fields of a listing (ml and price are checked in listings)
 export const listingDetailsSchema = z.object({
   title: z
     .string()

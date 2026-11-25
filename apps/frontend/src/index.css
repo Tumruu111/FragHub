@@ -26,20 +26,20 @@ label {
   :root {
     --gold: #c9a84c;
     --gold-light: #e8c97a;
-    --gold-dim: #8a6f2e;
+    --gold-dim: #a8893f;
     --gold-pale: rgba(201, 168, 76, 0.08);
     --gold-border: rgba(201, 168, 76, 0.18);
     --gold-border2: rgba(201, 168, 76, 0.35);
 
     --bg: #080808;
-    --bg-card: #0f0f0f;
-    --bg-elevated: #161616;
-    --border: #1e1e1e;
-    --border2: #2a2a2a;
+    --bg-card: #131210;
+    --bg-elevated: #1c1a17;
+    --border: #2e2a25;
+    --border2: #3d3831;
 
     --text: #ede9e2;
-    --text-muted: #7a7770;
-    --text-dim: #444;
+    --text-muted: #b3ada3;
+    --text-dim: #8c877e;
 
     --font-serif: 'Cormorant Garamond', Georgia, serif;
     --font-sans: 'Jost', sans-serif;
@@ -55,7 +55,7 @@ label {
     background: var(--bg);
     color: var(--text);
     font-family: var(--font-sans);
-    font-weight: 300;
+    font-weight: 400;
     -webkit-font-smoothing: antialiased;
     letter-spacing: 0.01em;
     user-select: none;
@@ -328,9 +328,9 @@ label {
 }
 .eyebrow-text {
   font-family: var(--font-sans);
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   font-weight: 400;
-  letter-spacing: 0.45em;
+  letter-spacing: 0.2em;
   color: var(--gold);
   white-space: nowrap;
 }
@@ -368,12 +368,13 @@ label {
 
 .hero-subtitle {
   font-family: var(--font-sans);
-  font-size: 0.75rem;
-  font-weight: 300;
-  letter-spacing: 0.28em;
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
+  max-width: 34ch;
   margin-bottom: 2.6rem;
-  text-transform: uppercase;
 }
 
 .hero-cta-row {
@@ -392,9 +393,9 @@ label {
   border: 1px solid var(--gold-border2);
   color: var(--gold-light);
   font-family: var(--font-sans);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 400;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   cursor: pointer;
   transition: background 0.3s, border-color 0.3s, color 0.3s;
@@ -480,9 +481,9 @@ label {
 }
 .marquee-item {
   font-family: var(--font-sans);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 400;
-  letter-spacing: 0.38em;
+  letter-spacing: 0.2em;
   color: var(--text-dim);
   display: flex;
   align-items: center;
@@ -495,7 +496,7 @@ label {
 }
 .marquee-dot {
   color: var(--gold-dim);
-  font-size: 0.45rem;
+  font-size: 0.75rem;
 }
 
 .collection-section {
@@ -517,9 +518,9 @@ label {
 .section-label {
   display: block;
   font-family: var(--font-sans);
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   font-weight: 400;
-  letter-spacing: 0.42em;
+  letter-spacing: 0.2em;
   color: var(--gold);
   margin-bottom: 0.5rem;
 }
@@ -545,8 +546,8 @@ label {
 }
 .item-count-label {
   font-family: var(--font-sans);
-  font-size: 0.55rem;
-  letter-spacing: 0.3em;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
   color: var(--text-dim);
   vertical-align: super;
 }
@@ -687,9 +688,9 @@ label {
 }
 .oos-text {
   font-family: var(--font-sans);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 400;
-  letter-spacing: 0.35em;
+  letter-spacing: 0.2em;
   color: var(--text-muted);
   border: 1px solid var(--border2);
   padding: 6px 16px;
@@ -720,9 +721,9 @@ label {
   border: none;
   color: #0a0a0a;
   font-family: var(--font-sans);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.2em;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -750,7 +751,7 @@ label {
 }
 .pcard-size {
   font-family: var(--font-sans);
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   letter-spacing: 0.2em;
   color: var(--text-dim);
   text-transform: uppercase;
@@ -764,7 +765,7 @@ label {
 }
 .vibe-tag {
   font-family: var(--font-sans);
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.12em;
   color: var(--gold);
@@ -775,6 +776,8 @@ label {
 
 .pcard-price-row {
   display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
   align-items: baseline;
   justify-content: space-between;
   margin-top: auto;
@@ -788,10 +791,9 @@ label {
 }
 .pcard-avail {
   font-family: var(--font-sans);
-  font-size: 0.55rem;
-  letter-spacing: 0.2em;
-  color: var(--text-dim);
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
 }
 
 .craft-strip {
@@ -826,7 +828,7 @@ label {
 }
 .craft-title {
   font-family: var(--font-sans);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.18em;
   color: var(--text);
@@ -835,8 +837,8 @@ label {
 }
 .craft-desc {
   font-family: var(--font-sans);
-  font-size: 0.65rem;
-  font-weight: 300;
+  font-size: 0.75rem;
+  font-weight: 400;
   letter-spacing: 0.05em;
   color: var(--text-muted);
 }
@@ -879,9 +881,9 @@ label {
   text-align: center;
   padding: 9px 1rem;
   font-family: var(--font-sans);
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   font-weight: 400;
-  letter-spacing: 0.32em;
+  letter-spacing: 0.2em;
   color: var(--gold);
   background: rgba(201, 168, 76, 0.04);
   border-bottom: 1px solid var(--gold-border);
@@ -912,7 +914,15 @@ label {
   letter-spacing: 0.35em;
   color: var(--gold);
   text-decoration: none;
+  white-space: nowrap;
   transition: color 0.3s;
+}
+/* Keep the name on one line next to the cart and menu on phones */
+@media (max-width: 480px) {
+  .site-logo {
+    font-size: 1.05rem;
+    letter-spacing: 0.22em;
+  }
 }
 .site-logo:hover {
   color: var(--gold-light);
@@ -932,9 +942,9 @@ label {
 .nav-link {
   position: relative;
   font-family: var(--font-sans);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 400;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
   text-decoration: none;
   text-transform: uppercase;
   transition: color 0.3s;
@@ -968,7 +978,7 @@ label {
   border: none;
   cursor: pointer;
   font-family: var(--font-sans);
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -1024,8 +1034,8 @@ label {
 }
 .mobile-nav-link {
   font-family: var(--font-sans);
-  font-size: 0.65rem;
-  letter-spacing: 0.22em;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--text-muted);
   text-decoration: none;
@@ -1069,8 +1079,8 @@ label {
 
 .footer-tagline {
   font-family: var(--font-sans);
-  font-size: 0.65rem;
-  font-weight: 300;
+  font-size: 0.75rem;
+  font-weight: 400;
   letter-spacing: 0.08em;
   line-height: 1.8;
   color: var(--text-dim);
@@ -1095,9 +1105,9 @@ label {
 
 .footer-col-heading {
   font-family: var(--font-sans);
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   font-weight: 400;
-  letter-spacing: 0.35em;
+  letter-spacing: 0.2em;
   color: var(--gold);
   margin-bottom: 0.25rem;
 }
@@ -1110,7 +1120,7 @@ label {
 
 .footer-link {
   font-family: var(--font-sans);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   letter-spacing: 0.1em;
   color: var(--text-dim);
   text-decoration: none;
@@ -1125,7 +1135,7 @@ label {
   align-items: center;
   gap: 8px;
   font-family: var(--font-sans);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   color: var(--text-dim);
   text-decoration: none;
@@ -1144,7 +1154,7 @@ label {
 
 .footer-copy {
   font-family: var(--font-sans);
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   letter-spacing: 0.2em;
   color: var(--text-dim);
 }
@@ -1194,9 +1204,9 @@ label {
 }
 .drawer-title {
   font-family: var(--font-sans);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 400;
-  letter-spacing: 0.32em;
+  letter-spacing: 0.2em;
   color: var(--text);
 }
 .drawer-count {
@@ -1210,7 +1220,7 @@ label {
   background: linear-gradient(135deg, var(--gold-dim), var(--gold));
   color: #0a0a0a;
   font-family: var(--font-sans);
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 .drawer-close {
@@ -1247,8 +1257,8 @@ label {
 }
 .drawer-empty-text {
   font-family: var(--font-sans);
-  font-size: 0.68rem;
-  letter-spacing: 0.28em;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
   color: var(--text-dim);
 }
 .drawer-empty-btn {
@@ -1258,8 +1268,8 @@ label {
   background: transparent;
   color: var(--gold-light);
   font-family: var(--font-sans);
-  font-size: 0.62rem;
-  letter-spacing: 0.26em;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
   cursor: pointer;
   transition: background 0.3s, border-color 0.3s;
 }
@@ -1313,7 +1323,7 @@ label {
 }
 .drawer-item-size {
   font-family: var(--font-sans);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   letter-spacing: 0.2em;
   color: var(--text-dim);
   text-transform: uppercase;
@@ -1352,8 +1362,8 @@ label {
 }
 .drawer-total-label {
   font-family: var(--font-sans);
-  font-size: 0.6rem;
-  letter-spacing: 0.3em;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
   color: var(--text-muted);
 }
 .drawer-total-value {
@@ -1377,9 +1387,9 @@ label {
   cursor: pointer;
   color: #0a0a0a;
   font-family: var(--font-sans);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.2em;
   transition: filter 0.25s;
 }
 .drawer-checkout-btn:hover:not(:disabled) {
@@ -1395,8 +1405,8 @@ label {
   border: none;
   cursor: pointer;
   font-family: var(--font-sans);
-  font-size: 0.6rem;
-  letter-spacing: 0.22em;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
   color: var(--text-dim);
   text-align: center;
   padding-bottom: 1px;
@@ -1477,8 +1487,8 @@ label {
   align-items: center;
   gap: 12px;
   font-family: var(--font-sans);
-  font-size: 0.62rem;
-  letter-spacing: 0.32em;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
   color: var(--text);
 }
 .qpay-header-rule {
@@ -1521,8 +1531,8 @@ label {
 }
 .qpay-status-text {
   font-family: var(--font-sans);
-  font-size: 0.62rem;
-  letter-spacing: 0.26em;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
   color: var(--text-muted);
 }
 
@@ -1537,7 +1547,7 @@ label {
   margin-bottom: 0.7rem;
 }
 .qpay-amount-eyebrow .eyebrow-text {
-  font-size: 0.58rem;
+  font-size: 0.75rem;
 }
 .qpay-amount-eyebrow .eyebrow-line {
   width: 26px;
@@ -1592,8 +1602,8 @@ label {
 }
 .qpay-banks-label span {
   font-family: var(--font-sans);
-  font-size: 0.56rem;
-  letter-spacing: 0.24em;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
   color: var(--text-dim);
   white-space: nowrap;
 }
@@ -1635,7 +1645,7 @@ label {
 }
 .qpay-bank-name {
   font-family: var(--font-sans);
-  font-size: 0.53rem;
+  font-size: 0.75rem;
   letter-spacing: 0.1em;
   color: var(--text-muted);
   text-align: center;
@@ -1652,7 +1662,7 @@ label {
 }
 .qpay-waiting span {
   font-family: var(--font-sans);
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   letter-spacing: 0.18em;
   color: var(--text-dim);
 }
@@ -1688,8 +1698,8 @@ label {
 }
 .qpay-paid-sub {
   font-family: var(--font-sans);
-  font-size: 0.6rem;
-  letter-spacing: 0.22em;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
   color: var(--text-dim);
 }
 
@@ -1703,7 +1713,7 @@ label {
 }
 .qpay-error-text {
   font-family: var(--font-sans);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   letter-spacing: 0.1em;
   color: #f87171;
 }
@@ -1713,8 +1723,8 @@ label {
   background: transparent;
   color: var(--text-muted);
   font-family: var(--font-sans);
-  font-size: 0.6rem;
-  letter-spacing: 0.24em;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
   cursor: pointer;
   transition: border-color 0.25s, color 0.25s;
 }
@@ -1728,7 +1738,7 @@ label {
   border: none;
   cursor: pointer;
   font-family: var(--font-sans);
-  font-size: 0.56rem;
+  font-size: 0.75rem;
   letter-spacing: 0.18em;
   color: var(--text-dim);
   transition: color 0.25s;
@@ -1758,7 +1768,7 @@ label {
 }
 
 .drawer-note {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   line-height: 1.6;
   color: var(--text-dim);
   margin: 0.25rem 0 0.75rem;

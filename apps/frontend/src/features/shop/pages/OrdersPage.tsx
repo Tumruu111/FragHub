@@ -45,10 +45,10 @@ const Steps: FC<{ preorder: Preorder }> = ({ preorder }) => {
               style={{ background: done ? 'var(--gold)' : 'var(--border)' }}
             />
             <span
-              className="text-[10px] tracking-widest"
+              className="text-xs"
               style={{ color: done ? 'var(--gold)' : 'var(--text-dim)' }}
             >
-              {s.label.toUpperCase()}
+              {s.label}
             </span>
           </li>
         );
@@ -75,11 +75,8 @@ const PreorderCard: FC<{
     >
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <p
-            className="text-xs tracking-[0.3em]"
-            style={{ color: 'var(--text-dim)' }}
-          >
-            PRE-ORDER #{shortId(p.id)} · {dateText(p.createdAt)}
+          <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
+            Pre-order #{shortId(p.id)}, placed {dateText(p.createdAt)}
           </p>
           <p
             className="font-display text-2xl mt-1"
@@ -127,7 +124,7 @@ const PreorderCard: FC<{
       </div>
 
       <div
-        className="grid grid-cols-2 gap-3 text-xs pt-3"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-3"
         style={{
           borderTop: '1px solid var(--border)',
           color: 'var(--text-muted)',
@@ -135,10 +132,11 @@ const PreorderCard: FC<{
       >
         <span>
           Deposit (50%): {p.deposit.toLocaleString()}₮
-          {p.depositPaidAt ? ' · paid' : ''}
+          {p.depositPaidAt ? ', paid' : ', not paid yet'}
         </span>
         <span>
-          The rest: {p.balance.toLocaleString()}₮{p.paidAt ? ' · paid' : ''}
+          The rest: {p.balance.toLocaleString()}₮
+          {p.paidAt ? ', paid' : ', due on arrival'}
         </span>
       </div>
 
